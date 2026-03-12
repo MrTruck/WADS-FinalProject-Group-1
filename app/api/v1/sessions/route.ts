@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
  * @swagger
  * /sessions:
  *   get:
- *     summary: Get all logged study sessions for user
+ *     summary: Get all sessions for user
  *     tags:
  *       - Study Sessions
  *     security:
@@ -27,7 +27,7 @@ import { NextResponse } from "next/server";
  *         schema:
  *           type: string
  *         description: Filter sessions by task ID
- *         example: clx123abc
+ *         example: tsk123
  *       - in: query
  *         name: session_type
  *         schema:
@@ -46,13 +46,13 @@ import { NextResponse } from "next/server";
  *                 properties:
  *                   id:
  *                     type: string
- *                     example: clxses789
+ *                     example: sess789
  *                   user_id:
  *                     type: string
- *                     example: clxusr001
+ *                     example: usr001
  *                   task_id:
  *                     type: string
- *                     example: clx123abc
+ *                     example: tsk123
  *                   start_time:
  *                     type: string
  *                     example: "2026-03-10T14:00:00Z"
@@ -84,9 +84,9 @@ export async function GET() {
   return NextResponse.json(
     [
       {
-        id: "clxses789",
-        user_id: "clxusr001",
-        task_id: "clx123abc",
+        id: "sess789",
+        user_id: "usr001",
+        task_id: "tsk123",
         start_time: "2026-03-10T14:00:00Z",
         end_time: "2026-03-10T15:30:00Z",
         actual_minutes: 90,
@@ -125,7 +125,7 @@ export async function GET() {
  *             properties:
  *               task_id:
  *                 type: string
- *                 example: clx123abc
+ *                 example: tsk123
  *               start_time:
  *                 type: string
  *                 example: "2026-03-10T14:00:00Z"
@@ -161,7 +161,7 @@ export async function GET() {
  *                   example: Study session logged successfully
  *                 id:
  *                   type: string
- *                   example: clxses789
+ *                   example: sess789
  *       400:
  *         description: Validation error — missing or invalid fields
  *       401:
@@ -171,7 +171,7 @@ export async function POST() {
   return NextResponse.json(
     {
       message: "Study session logged successfully",
-      id: "clxses789",
+      id: "sess789",
     },
     { status: 201 }
   );

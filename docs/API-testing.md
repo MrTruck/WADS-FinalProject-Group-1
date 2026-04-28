@@ -22,14 +22,14 @@
 | **Authentication** | | | | | |
 | TC‑01 | POST | `/api/auth/register` | Valid email, password, name | 201 Created | PASS |
 | TC‑02 | POST | `/api/auth/register` | Missing password field | 400 Bad Request | PASS |
-| TC‑03 | POST | `/api/auth/register` | Email as number (invalid type) | 400 Bad Request / validation error | NOT TESTED |
+| TC‑03 | POST | `/api/auth/register` | Email as number (invalid type) | 400 Bad Request / validation error | PASS|
 | TC‑04 | POST | `/api/auth/login` | Valid credentials | 200 OK, JWT token & cookie | PASS |
 | TC‑05 | POST | `/api/auth/login` | Wrong password | 401 Unauthorized | PASS |
 | TC‑06 | POST | `/api/auth/login` | Non‑existent user | 401 Unauthorized | PASS |
 | TC‑07 | GET | `/api/auth/me` | No auth header/cookie | 401 Unauthorized | PASS |
 | TC‑08 | GET | `/api/auth/me` | Valid session cookie | 200 OK, user profile | PASS |
-| TC‑09 | GET | `/api/v1/admin/users` | Regular user token, admin route | 403 Forbidden | NOT TESTED |
-| TC‑10 | GET | `/api/v1/admin/users` | Admin token, admin route | 200 OK, user list | NOT TESTED |
+| TC‑09 | GET | `/api/v1/admin/users` | Regular user token, admin route | 403 Forbidden | PASS |
+| TC‑10 | GET | `/api/v1/admin/users` | Admin token, admin route | 200 OK, user list | PASS |
 | **Tasks (CRUD)** | | | | | |
 | TC‑11 | POST | `/api/v1/tasks` | Valid title & priority (CSRF token present) | 201 Created | PASS |
 | TC‑12 | POST | `/api/v1/tasks` | Missing `title` field | 400 Bad Request | PASS |
@@ -73,7 +73,7 @@
 | TC‑63 | (POST) | Accept an AI suggestion | – | 200 OK | NOT TESTED |
 | TC‑64 | (POST) | Dismiss an AI suggestion | – | 200 OK | NOT TESTED |
 | **Admin** | | | | | |
-| TC‑65 | POST | `/api/auth/login` | Admin login (`admin@example.com`) | 200 OK, admin token | NOT TESTED |
+| TC‑65 | POST | `/api/auth/login` | Admin login (`admin@example.com`) | 200 OK, admin token | PASS |
 | TC‑66 | GET | `/api/v1/admin/users` | Admin token, list all users | 200 OK | PASS |
 | TC‑67 | DELETE | `/api/v1/admin/users/{userId}` | Admin deletes a user | 204 No Content | PASS |
 | TC‑68 | GET | `/api/v1/admin/analytics` | System analytics (admin only) | 200 OK | PASS |
@@ -82,16 +82,16 @@
 
 | Test Case | Attack Type / Scenario | Expected Behaviour | Status |
 |-----------|------------------------|-------------------|--------|
-| TC‑21 | Empty input fields (registration) | 400 Bad Request | NOT TESTED |
-| TC‑22 | Boundary – title exactly 255 chars | Accepted, 201 Created | NOT TESTED |
-| TC‑23 | Boundary – title > 255 chars | Rejected, 400 | NOT TESTED |
-| TC‑24 | Boundary – title 1 char (minimum) | Accepted, 201 | NOT TESTED |
-| TC‑25 | Special characters in task title | Accepted, stored safely | NOT TESTED |
-| TC‑26 | SQL Injection – email `' OR '1'='1` | Input sanitised, login fails / 400 | NOT TESTED |
-| TC‑27 | Stored XSS – name `<script>alert('XSS')</script>` | Output escaped, no script execution | NOT TESTED |
-| TC‑28 | XSS in task title (via GET listing) | Rendered as text, not executed | NOT TESTED |
-| TC‑29 | Invalid email format (`notanemail`) | 400 Bad Request | NOT TESTED |
-| TC‑30 | Invalid `estimated_hours` (negative number) | 400 Bad Request | NOT TESTED |
+| TC‑21 | Empty input fields (registration) | 400 Bad Request |PASS |
+| TC‑22 | Boundary – title exactly 255 chars | Accepted, 201 Created | PASS |
+| TC‑23 | Boundary – title > 255 chars | Rejected, 400 | PASS |
+| TC‑24 | Boundary – title 1 char (minimum) | Accepted, 201 | PASS |
+| TC‑25 | Special characters in task title | Accepted, stored safely | PASS |
+| TC‑26 | SQL Injection – email `' OR '1'='1` | Input sanitised, login fails / 400 | PASS |
+| TC‑27 | Stored XSS – name `<script>alert('XSS')</script>` | - | PASS |
+| TC‑28 | XSS in task title  | - | PASS |
+| TC‑29 | Invalid email format (`notanemail`) | 400 Bad Request | PASS |
+| TC‑30 | Invalid `estimated_hours` (negative number) | 400 Bad Request | PASS |
 | TC‑31 | Duplicate email registration | 409 Conflict | PASS |
 | TC‑32 | CSRF – POST task without `x-csrf-token` header | 403 Forbidden | PASS |
 | TC‑33 | Expired token access | 401 Unauthorized | PASS |

@@ -1,85 +1,56 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { validateCsrfToken } from '@/lib/csrf'
+import { updateCategorySchema } from '@/lib/validators'
+import { ok, noContent, badRequest, unauthorized, forbidden, notFound, serverError } from '@/lib/response'
+import { sanitizeObject } from '@/lib/sanitize'
 
-/**
- * @swagger
- * /categories/{id}:
- *   put:
- *     summary: Update a category
- *     tags:
- *       - Categories
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The category ID
- *         example: cat456
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *                 example: Advanced Mathematics
- *               color_hex:
- *                 type: string
- *                 example: "#33FF57"
- *     responses:
- *       200:
- *         description: Category updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Category updated successfully
- *       400:
- *         description: Validation error — missing or invalid fields
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- *       404:
- *         description: Category not found
- */
-export async function PUT() {
-  return NextResponse.json(
-    { message: "Category updated successfully" },
-    { status: 200 }
-  );
+type Params = { params: Promise<{ id: string }> }
+
+export async function PUT(request: Request, { params }: Params) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const csrfToken = request.headers.get('x-csrf-token')
+    if (!csrfToken || !validateCsrfToken(csrfToken, user.userId)) return forbidden('Invalid or missing CSRF token')
+
+    const { id } = await params
+
+    const existing = await prisma.category.findFirst({ where: { category_id: id, user_id: user.userId } })
+    if (!existing) return notFound('Category')
+
+    const body = await request.json().catch(() => null)
+    if (!body) return badRequest('Request body is required')
+
+    const result = updateCategorySchema.safeParse(body)
+    if (!result.success) return badRequest('Validation failed', result.error.flatten().fieldErrors)
+
+    const category = await prisma.category.update({ where: { category_id: id }, data: sanitizeObject(result.data) })
+    return ok({ category })
+  } catch (error) {
+    console.error('[CATEGORY PUT]', error)
+    return serverError()
+  }
 }
 
-/**
- * @swagger
- * /categories/{id}:
- *   delete:
- *     summary: Delete a category
- *     tags:
- *       - Categories
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The category ID
- *         example: cat456
- *     responses:
- *       204:
- *         description: Category deleted successfully — tasks reassigned
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- *       404:
- *         description: Category not found
- */
-export async function DELETE() {
-  return new NextResponse(null, { status: 204 });
+export async function DELETE(request: Request, { params }: Params) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const csrfToken = request.headers.get('x-csrf-token')
+    if (!csrfToken || !validateCsrfToken(csrfToken, user.userId)) return forbidden('Invalid or missing CSRF token')
+
+    const { id } = await params
+
+    const existing = await prisma.category.findFirst({ where: { category_id: id, user_id: user.userId } })
+    if (!existing) return notFound('Category')
+
+    await prisma.category.delete({ where: { category_id: id } })
+    return noContent()
+  } catch (error) {
+    console.error('[CATEGORY DELETE]', error)
+    return serverError()
+  }
 }

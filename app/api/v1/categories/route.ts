@@ -1,107 +1,51 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { validateCsrfToken } from '@/lib/csrf'
+import { createCategorySchema } from '@/lib/validators'
+import { ok, created, badRequest, unauthorized, forbidden, conflict, serverError } from '@/lib/response'
+import { sanitizeObject } from '@/lib/sanitize'
 
-/**
- * @swagger
- * /categories:
- *   get:
- *     summary: Get all categories
- *     tags:
- *       - Categories
- *     security:
- *       - cookieAuth: []
- *    responses:
- *      200:
- *       description: List of categories returned successfully
- *      content:
- *       application/json:
- *        schema:
- *       type: array
- *      items:
- *      type: object
- *     properties:
- *     id:
- *     type: string
- *    example: ctg123
- *   name:
- *    type: string
- *   example: Work
- *  description:
- *  type: string
- * example: Tasks related to work
- * color_hex:
- * type: string
- * example: #FF2F2F
- *      401:
- *      description: Unauthorized — missing or invalid JWT token
-*/
-export async function GET() {
-  return NextResponse.json(
-    [
-      {
-        id: "ctg123",
-        name: "Work",
-        description: "Tasks related to work",
-        color_hex: "#FF2F2F",
-      },
-    ],
-    { status: 200 }
-  );
+export async function GET(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const categories = await prisma.category.findMany({
+      where: { user_id: user.userId },
+      include: { _count: { select: { tasks: true } } },
+      orderBy: { created_at: 'asc' },
+    })
+
+    return ok({ categories, count: categories.length })
+  } catch (error) {
+    console.error('[CATEGORIES GET]', error)
+    return serverError()
+  }
 }
 
-/**
- * @swagger
- * /categories:
- *   post:
- *     summary: Create a new category
- *     tags:
- *       - Categories
- *     security:
- *       - cookieAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - description
- *               - color_hex
- *             properties:
- *               name:
- *                 type: string
- *                 example: Work
- *               description:
- *                 type: string
- *                 example: Tasks related to work
- *               color_hex:
- *                 type: string
- *                 example: #FF2F2F
- *     responses:
- *       201:
- *         description: Category created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Category created successfully
- *                 id:
- *                   type: string
- *                   example: ctg123
- *       400:
- *         description: Validation error — missing or invalid fields
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function POST() {
-  return NextResponse.json(
-    {
-      message: "Category created successfully",
-      id: "ctg123",
-    },
-    { status: 201 }
-  );
+export async function POST(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const csrfToken = request.headers.get('x-csrf-token')
+    if (!csrfToken || !validateCsrfToken(csrfToken, user.userId)) return forbidden('Invalid or missing CSRF token')
+
+    const body = await request.json().catch(() => null)
+    if (!body) return badRequest('Request body is required')
+
+    const result = createCategorySchema.safeParse(body)
+    if (!result.success) return badRequest('Validation failed', result.error.flatten().fieldErrors)
+
+    const data = sanitizeObject(result.data)
+
+    const existing = await prisma.category.findFirst({ where: { user_id: user.userId, name: data.name } })
+    if (existing) return conflict(`Category "${data.name}" already exists`)
+
+    const category = await prisma.category.create({ data: { ...data, user_id: user.userId } })
+    return created({ category })
+  } catch (error) {
+    console.error('[CATEGORIES POST]', error)
+    return serverError()
+  }
 }

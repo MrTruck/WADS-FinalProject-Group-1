@@ -1,51 +1,35 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { ok, unauthorized, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /ai/insights:
- * get:
- * summary: Get latest AI analysis for user
- * tags:
- * - AI Modules
- * security:
- * - cookieAuth: []
- * responses:
- * 200:
- *   description: Latest AI insights returned successfully
- * content:
- * application/json:
- * schema:
- *   type: object
- * properties:
- *    burnout_risk:
- *                   type: string
- *                   enum: [low, moderate, high]
- *                   example: moderate
- *                 schedule_status:
- *                   type: string
- *                   enum: [on_track, behind, ahead]
- *                   example: on_track
- *                 summary:
- *                   type: string
- *                   example: You are on track but showing early signs of overwork
- *                 generated_at:
- *                   type: string
- *                   example: "2026-03-10T08:00:00Z"
- *                 cached:
- *                   type: boolean
- *                   example: true
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function GET() {
-  return NextResponse.json(
-    {
-      burnout_risk: "moderate",
-      schedule_status: "on_track",
-      summary: "You are on track but showing early signs of overwork",
-      generated_at: "2026-03-10T08:00:00Z",
-      cached: true,
-    },
-    { status: 200 }
-  );
+export async function GET(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const latest = await prisma.ai_insight.findFirst({
+      where: { user_id: user.userId },
+      orderBy: { generated_at: 'desc' },
+    })
+
+    const history = await prisma.ai_insight.findMany({
+      where: { user_id: user.userId },
+      orderBy: { generated_at: 'desc' },
+      take: 5,
+      select: {
+        ai_insight_id: true,
+        burnout_risk_score: true,
+        burnout_risk_label: true,
+        study_streak_days: true,
+        weekly_hours: true,
+        recommendations: true,
+        generated_at: true,
+      },
+    })
+
+    return ok({ latest, history })
+  } catch (error) {
+    console.error('[AI INSIGHTS GET]', error)
+    return serverError()
+  }
 }

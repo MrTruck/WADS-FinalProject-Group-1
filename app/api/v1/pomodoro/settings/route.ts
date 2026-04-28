@@ -1,120 +1,49 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { validateCsrfToken } from '@/lib/csrf'
+import { pomodoroSettingsSchema } from '@/lib/validators'
+import { ok, badRequest, unauthorized, forbidden, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /pomodoro/settings:
- * get:
- * summary: Get the user's pomodoro settings
- * tags:
- * - Pomodoro
- * security:
- * - cookieAuth: []
- * responses:
- * 200:
- * description: Pomodoro settings returned successfully
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * id:
- * type: string
- * example: abcd1234
- * user_id:
- * type: string
- * example: usr123
- * work_duration:
- * type: number
- * example: 45
- * short_break:
- * type: number
- * example: 5
- * long_break:
- * type: number
- * example: 15
- * cycles_before_long_break:
- * type: number
- * example: 2
- * auto_start_breaks:
- * type: boolean
- * example: true
- * auto_start_work:
- * type: boolean
- * example: true
- * updated_at:
- * type: string
- * example: 2024-06-01T12:00:00Z
- * 401:
- * description: Unauthorized— missing or invalid JWT token
-*/
-export async function GET() {
-  return NextResponse.json(
-    {
-      id: "clxpom001",
-      user_id: "clxusr001",
-      work_duration: 45,
-      short_break: 5,
-      long_break: 15,
-      cycles_before_long_break: 2,
-      auto_start_breaks: true,
-      auto_start_work: true,
-      updated_at: "2026-03-10T10:00:00Z",
-    },
-    { status: 200 }
-  );
+export async function GET(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    let settings = await prisma.pomodoro_settings.findUnique({ where: { user_id: user.userId } })
+    if (!settings) {
+      settings = await prisma.pomodoro_settings.create({ data: { user_id: user.userId } })
+    }
+
+    return ok({ settings })
+  } catch (error) {
+    console.error('[POMODORO SETTINGS GET]', error)
+    return serverError()
+  }
 }
 
-/**
- * @swagger
- * /pomodoro/settings:
- * put:
- * summary: Update the user's pomodoro settings
- * tags:
- * - Pomodoro
- * security:
- * - cookieAuth: []
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * work_duration:
- * type: number
- * example: 45
- * short_break:
- * type: number
- * example: 5
- *  long_break:
- * type: number
- * example: 15
- * cycles_before_long_break:
- * type: number
- * example: 2
- * auto_start_breaks:
- * type: boolean
- * example: true
- * auto_start_work:
- * type: boolean
- * example: true
- * responses:
- * 200:
- * description: Pomodoro settings updated successfully
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * message:
- * type: string
- * example: Pomodoro settings updated successfully
- * 400:
- * description: Bad request— missing or invalid input data
-*/
-export async function PUT() {
-    return NextResponse.json(
-        { message: "Pomodoro settings updated successfully" },
-        { status: 200 }
-    );
+export async function PUT(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const csrfToken = request.headers.get('x-csrf-token')
+    if (!csrfToken || !validateCsrfToken(csrfToken, user.userId)) return forbidden('Invalid or missing CSRF token')
+
+    const body = await request.json().catch(() => null)
+    if (!body) return badRequest('Request body is required')
+
+    const result = pomodoroSettingsSchema.partial().safeParse(body)
+    if (!result.success) return badRequest('Validation failed', result.error.flatten().fieldErrors)
+
+    const settings = await prisma.pomodoro_settings.upsert({
+      where: { user_id: user.userId },
+      update: result.data,
+      create: { ...result.data, user_id: user.userId },
+    })
+
+    return ok({ settings })
+  } catch (error) {
+    console.error('[POMODORO SETTINGS PUT]', error)
+    return serverError()
+  }
 }

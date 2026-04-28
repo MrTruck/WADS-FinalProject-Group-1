@@ -1,74 +1,45 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { ok, unauthorized, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /analytics/completion:
- *   get:
- *     summary: Get task completion rates
- *     tags:
- *       - Analytics
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: from
- *         schema:
- *           type: string
- *         description: Start date (ISO 8601)
- *         example: "2026-03-01"
- *       - in: query
- *         name: to
- *         schema:
- *           type: string
- *         description: End date (ISO 8601)
- *         example: "2026-03-10"
- *     responses:
- *       200:
- *         description: Task completion rates returned successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 overall_rate:
- *                   type: number
- *                   example: 70
- *                 by_priority:
- *                   type: object
- *                   properties:
- *                     high:
- *                       type: number
- *                       example: 85
- *                     medium:
- *                       type: number
- *                       example: 70
- *                     low:
- *                       type: number
- *                       example: 60
- *                 by_category:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       category_id:
- *                         type: string
- *                         example: cat456
- *                       name:
- *                         type: string
- *                         example: Mathematics
- *                       rate:
- *                         type: number
- *                         example: 75
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function GET() {
-  return NextResponse.json(
-    {
-      overall_rate: 70,
-      by_priority: { high: 85, medium: 70, low: 60 },
-      by_category: [{ category_id: "cat456", name: "Mathematics", rate: 75 }],
-    },
-    { status: 200 }
-  );
+export async function GET(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const { searchParams } = new URL(request.url)
+    const days = Math.min(parseInt(searchParams.get('days') ?? '30'), 90)
+
+    const since = new Date()
+    since.setDate(since.getDate() - days)
+
+    const tasks = await prisma.task.findMany({
+      where: { user_id: user.userId, created_at: { gte: since } },
+      select: { status: true, priority: true, completed_at: true, due_date: true },
+    })
+
+    const total = tasks.length
+    const completed = tasks.filter((t) => t.status === 'COMPLETED').length
+    const onTime = tasks.filter(
+      (t) => t.status === 'COMPLETED' && t.due_date && t.completed_at && t.completed_at <= t.due_date
+    ).length
+
+    const byPriority = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((p) => {
+      const pt = tasks.filter((t) => t.priority === p)
+      const pc = pt.filter((t) => t.status === 'COMPLETED').length
+      return { priority: p, total: pt.length, completed: pc, rate: pt.length > 0 ? Math.round((pc / pt.length) * 100) : 0 }
+    })
+
+    return ok({
+      period_days: days,
+      total_tasks: total,
+      completed_tasks: completed,
+      completion_rate_percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+      on_time_rate_percent: completed > 0 ? Math.round((onTime / completed) * 100) : 0,
+      by_priority: byPriority,
+    })
+  } catch (error) {
+    console.error('[ANALYTICS COMPLETION]', error)
+    return serverError()
+  }
 }

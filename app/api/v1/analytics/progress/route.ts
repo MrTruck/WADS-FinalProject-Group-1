@@ -1,66 +1,50 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { ok, unauthorized, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /analytics/progress:
- *   get:
- *     summary: Get progress stats for user
- *     tags:
- *       - Analytics
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: from
- *         schema:
- *           type: string
- *         description: Start date
- *         example: "2026-03-01"
- *       - in: query
- *         name: to
- *         schema:
- *           type: string
- *         description: End date
- *         example: "2026-03-10"
- *     responses:
- *       200:
- *         description: Progress stats returned successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 total_tasks:
- *                   type: number
- *                   example: 20
- *                 completed_tasks:
- *                   type: number
- *                   example: 14
- *                 completion_rate:
- *                   type: number
- *                   example: 70
- *                 total_study_minutes:
- *                   type: number
- *                   example: 840
- *                 total_sessions:
- *                   type: number
- *                   example: 12
- *                 avg_focus_score:
- *                   type: number
- *                   example: 7.5
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function GET() {
-  return NextResponse.json(
-    {
-      total_tasks: 20,
-      completed_tasks: 14,
-      completion_rate: 70,
-      total_study_minutes: 840,
-      total_sessions: 12,
-      avg_focus_score: 7.5,
-    },
-    { status: 200 }
-  );
+export async function GET(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const [tasks, sessions, streak] = await Promise.all([
+      prisma.task.groupBy({
+        by: ['status'],
+        where: { user_id: user.userId },
+        _count: { status: true },
+      }),
+      prisma.study_session.aggregate({
+        where: { user_id: user.userId },
+        _sum: { duration_mins: true },
+        _count: { study_session_id: true },
+        _avg: { focus_score: true },
+      }),
+      prisma.study_streak.findUnique({ where: { user_id: user.userId } }),
+    ])
+
+    const taskBreakdown = Object.fromEntries(tasks.map((t) => [t.status, t._count.status]))
+    const totalTasks = tasks.reduce((acc, t) => acc + t._count.status, 0)
+    const completedTasks = taskBreakdown['COMPLETED'] ?? 0
+
+    return ok({
+      tasks: {
+        total: totalTasks,
+        breakdown: taskBreakdown,
+        completion_rate_percent: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      },
+      sessions: {
+        total_count: sessions._count.study_session_id,
+        total_duration_mins: sessions._sum.duration_mins ?? 0,
+        avg_focus_score: sessions._avg.focus_score ? Math.round(sessions._avg.focus_score) : null,
+      },
+      streak: {
+        current: streak?.current_streak ?? 0,
+        longest: streak?.longest_streak ?? 0,
+        last_study_date: streak?.last_study_date ?? null,
+      },
+    })
+  } catch (error) {
+    console.error('[ANALYTICS PROGRESS]', error)
+    return serverError()
+  }
 }

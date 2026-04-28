@@ -1,66 +1,51 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { ok, unauthorized, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /analytics/workload:
- *   get:
- *     summary: Get workload density per day
- *     tags:
- *       - Analytics
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: query
- *         name: from
- *         schema:
- *           type: string
- *         description: Start date (ISO 8601)
- *         example: "2026-03-01"
- *       - in: query
- *         name: to
- *         schema:
- *           type: string
- *         description: End date (ISO 8601)
- *         example: "2026-03-10"
- *     responses:
- *       200:
- *         description: Workload density data returned successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   date:
- *                     type: string
- *                     example: "2026-03-10"
- *                   total_minutes:
- *                     type: number
- *                     example: 180
- *                   session_count:
- *                     type: number
- *                     example: 3
- *                   task_count:
- *                     type: number
- *                     example: 4
- *                   density_score:
- *                     type: number
- *                     example: 8.5
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function GET() {
-  return NextResponse.json(
-    [
-      {
-        date: "2026-03-10",
-        total_minutes: 180,
-        session_count: 3,
-        task_count: 4,
-        density_score: 8.5,
+export async function GET(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const { searchParams } = new URL(request.url)
+    const days = Math.min(parseInt(searchParams.get('days') ?? '14'), 30)
+
+    const since = new Date()
+    since.setDate(since.getDate() - days)
+    since.setHours(0, 0, 0, 0)
+
+    const until = new Date()
+    until.setDate(until.getDate() + days)
+
+    const tasks = await prisma.task.findMany({
+      where: { user_id: user.userId, due_date: { gte: since, lte: until } },
+      select: {
+        task_id: true, title: true, priority: true,
+        difficulty: true, status: true, due_date: true, estimated_hours: true,
       },
-    ],
-    { status: 200 }
-  );
+      orderBy: { due_date: 'asc' },
+    })
+
+    const densityMap = new Map<string, typeof tasks>()
+    for (const task of tasks) {
+      if (!task.due_date) continue
+      const day = task.due_date.toISOString().split('T')[0]
+      if (!densityMap.has(day)) densityMap.set(day, [])
+      densityMap.get(day)!.push(task)
+    }
+
+    const workload = Array.from(densityMap.entries()).map(([date, dayTasks]) => ({
+      date,
+      task_count: dayTasks.length,
+      pending_count: dayTasks.filter((t) => t.status !== 'COMPLETED').length,
+      estimated_hours_total: dayTasks.reduce((acc, t) => acc + (t.estimated_hours ?? 0), 0),
+      has_urgent: dayTasks.some((t) => t.priority === 'URGENT'),
+      tasks: dayTasks,
+    }))
+
+    return ok({ workload, period_days: days })
+  } catch (error) {
+    console.error('[ANALYTICS WORKLOAD]', error)
+    return serverError()
+  }
 }

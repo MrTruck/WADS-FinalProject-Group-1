@@ -1,79 +1,37 @@
-import { NextResponse } from "next/server";
-/**
- * @swagger
- * /pomodoro/cycle:
- *  post:
- *  summary: Log a new Pomodoro cycle
- * tags:
- *  - Pomodoro
- * security:
- * - cookieAuth: []
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: object
- * required:
- * - session_id
- * - task_id
- * - cycle_number
- * - start_time
- * - end_time
- * - type
- * - completed
- * properties:
- * session_id:
- * type: string
- * example: "sess789"
- * task_id: 
- * type: string
- * example:"tsk123"
- * cycle_number:
- * type: number
- * example: 4
- * start_time: 
- * type: string
- * example: "2026-03-10T14:00:00Z"
- * end_time: 
- * type: string
- * example: "2026-03-10T14:25:00Z"
- * type: 
- * type: string
- * example: [work, short_break, long_break]
- * completed: 
- * type: boolean
- * example: true
- * responses:
- * 201:
- * description: Pomodoro cycle logged successfully
- * content:
- * application/json:
- *  schema:
- * type: object
- * properties:
- * message:
- * type: string
- * example: Pomodoro cycle logged successfully.
- * id:
- * type: string
- * example: "abc001"
- * next:
- * type: string
- * enum: [work, short_break, long_break]
- * example: short_break
- * 400:
- * description: Validation error — missing or invalid fields
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function POST() {
-  return NextResponse.json(
-    {
-      message: "Pomodoro cycle logged successfully",
-      id: "abc001",
-      next: "short_break",
-    },
-    { status: 201 }
-  );
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { validateCsrfToken } from '@/lib/csrf'
+import { pomodoroCycleSchema } from '@/lib/validators'
+import { created, badRequest, unauthorized, forbidden, serverError } from '@/lib/response'
+
+export async function POST(request: Request) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const csrfToken = request.headers.get('x-csrf-token')
+    if (!csrfToken || !validateCsrfToken(csrfToken, user.userId)) return forbidden('Invalid or missing CSRF token')
+
+    const body = await request.json().catch(() => null)
+    if (!body) return badRequest('Request body is required')
+
+    const result = pomodoroCycleSchema.safeParse(body)
+    if (!result.success) return badRequest('Validation failed', result.error.flatten().fieldErrors)
+
+    const data = result.data
+
+    const cycle = await prisma.pomodoro_cycle.create({
+      data: {
+        ...data,
+        start_time: new Date(data.start_time),
+        end_time: data.end_time ? new Date(data.end_time) : null,
+        user_id: user.userId,
+      },
+    })
+
+    return created({ cycle })
+  } catch (error) {
+    console.error('[POMODORO CYCLE POST]', error)
+    return serverError()
+  }
 }

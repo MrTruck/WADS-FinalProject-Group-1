@@ -1,67 +1,34 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { getUserFromRequest } from '@/lib/auth'
+import { ok, unauthorized, notFound, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /sessions/task/{taskId}:
- *   get:
- *     summary: Get all sessions for a specific task
- *     tags:
- *       - Study Sessions
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: taskId
- *         required: true
- *         schema:
- *           type: string
- *         description: The task ID
- *         example: tsk123
- *     responses:
- *       200:
- *         description: List of sessions for the task returned successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                     example: sess789
- *                   task_id:
- *                     type: string
- *                     example: tsk123
- *                   start_time:
- *                     type: string
- *                     example: "2026-03-10T14:00:00Z"
- *                   end_time:
- *                     type: string
- *                     example: "2026-03-10T15:30:00Z"
- *                   actual_minutes:
- *                     type: number
- *                     example: 90
- *                   session_type:
- *                     type: string
- *                     example: pomodoro
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- *       404:
- *         description: Task not found
- */
-export async function GET() {
-  return NextResponse.json(
-    [
-      {
-        id: "sess789",
-        task_id: "tsk123",
-        start_time: "2026-03-10T14:00:00Z",
-        end_time: "2026-03-10T15:30:00Z",
-        actual_minutes: 90,
-        session_type: "pomodoro",
-      },
-    ],
-    { status: 200 }
-  );
+type Params = { params: Promise<{ taskId: string }> }
+
+export async function GET(request: Request, { params }: Params) {
+  try {
+    const user = getUserFromRequest(request)
+    if (!user) return unauthorized()
+
+    const { taskId } = await params
+
+    const task = await prisma.task.findFirst({ where: { task_id: taskId, user_id: user.userId } })
+    if (!task) return notFound('Task')
+
+    const sessions = await prisma.study_session.findMany({
+      where: { task_id: taskId, user_id: user.userId },
+      orderBy: { start_time: 'desc' },
+    })
+
+    const totalMins = sessions.reduce((acc, s) => acc + (s.duration_mins ?? 0), 0)
+
+    return ok({
+      task: { task_id: task.task_id, title: task.title },
+      sessions,
+      count: sessions.length,
+      total_duration_mins: totalMins,
+    })
+  } catch (error) {
+    console.error('[SESSIONS TASK GET]', error)
+    return serverError()
+  }
 }

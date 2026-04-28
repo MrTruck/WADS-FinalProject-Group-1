@@ -1,64 +1,26 @@
-import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma'
+import { sendNotificationSchema } from '@/lib/validators'
+import { created, badRequest, unauthorized, serverError } from '@/lib/response'
 
-/**
- * @swagger
- * /notifications/send:
- *   post:
- *     summary: Trigger a notification (internal cron job only)
- *     tags:
- *       - Notifications
- *     security:
- *       - cookieAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - user_id
- *               - title
- *               - message
- *               - type
- *             properties:
- *               user_id:
- *                 type: string
- *                 example: usr001
- *               title:
- *                 type: string
- *                 example: Deadline approaching
- *               message:
- *                 type: string
- *                 example: Task "Finish assignment 1" is due in 2 hours
- *               type:
- *                 type: string
- *                 enum: [deadline, burnout, reschedule]
- *                 example: deadline
- *     responses:
- *       201:
- *         description: Notification sent successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Notification sent successfully
- *                 id:
- *                   type: string
- *                   example: ntf001
- *       400:
- *         description: Validation error — missing or invalid fields
- *       401:
- *         description: Unauthorized — missing or invalid JWT token
- */
-export async function POST() {
-  return NextResponse.json(
-    {
-      message: "Notification sent successfully",
-      id: "ntf001",
-    },
-    { status: 201 }
-  );
+export async function POST(request: Request) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return unauthorized('This endpoint is restricted to internal services')
+    }
+
+    const body = await request.json().catch(() => null)
+    if (!body) return badRequest('Request body is required')
+
+    const result = sendNotificationSchema.safeParse(body)
+    if (!result.success) return badRequest('Validation failed', result.error.flatten().fieldErrors)
+
+    const { user_id, type, title, message } = result.data
+
+    const notification = await prisma.notification.create({ data: { user_id, type, title, message } })
+    return created({ notification })
+  } catch (error) {
+    console.error('[NOTIF SEND]', error)
+    return serverError()
+  }
 }

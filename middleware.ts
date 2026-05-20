@@ -7,7 +7,7 @@ const PUBLIC_ROUTES = [
   '/api/auth/register',
   '/api/auth/login',
   '/api/auth/refresh',
-  '/api-doc',
+  '/api-doc'
 ]
 
 const ADMIN_ROUTES = ['/api/v1/admin']

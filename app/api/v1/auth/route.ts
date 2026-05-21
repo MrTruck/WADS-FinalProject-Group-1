@@ -39,7 +39,7 @@ import { NextResponse } from "next/server";
  *                   type: string
  *                   example: User registered successfully
  *       400:
- *         description: Validation error: missing or invalid fields
+ *         description: "Validation error: missing or invalid fields"
  *       409:
  *         description: Email already registered
  */

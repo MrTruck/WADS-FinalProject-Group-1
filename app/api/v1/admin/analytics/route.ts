@@ -1,3 +1,19 @@
+/**
+ * @swagger
+ * /api/v1/admin/analytics:
+ *   get:
+ *     summary: Get system-wide analytics (admin only)
+ *     tags: [Admin]
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: System statistics (users, tasks, AI requests, etc.)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { ok, unauthorized, forbidden, serverError } from '@/lib/response'

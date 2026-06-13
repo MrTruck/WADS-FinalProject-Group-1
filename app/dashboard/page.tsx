@@ -49,9 +49,8 @@ function getCsrfToken() {
     ?.split("=")[1];
 }
 
-async function apiFetch(path, options = {}) {
+async function apiFetch(path, options: any = {}) {
   const csrfToken = getCsrfToken();
-
   const res = await fetch(`/api/v1${path}`, {
     headers: {
       "Content-Type": "application/json",
@@ -64,18 +63,11 @@ async function apiFetch(path, options = {}) {
 
   if (!res.ok) {
     let message = "Something went wrong";
-
-    try {
-      const err = await res.json();
-      message = err.message || message;
-    } catch {}
-
+    try { const err = await res.json(); message = err.message || message; } catch {}
     throw new Error(message);
   }
 
-  // DELETE returns no content
   if (res.status === 204) return null;
-
   return res.json();
 }
 
@@ -84,37 +76,20 @@ const api = {
     const data = await apiFetch("/tasks");
     return data.data?.tasks ?? [];
   },
-
   async createTask(data) {
-    const res = await apiFetch("/tasks", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-    console.log("RAW CREATE RESPONSE", res);
+    const res = await apiFetch("/tasks", { method: "POST", body: JSON.stringify(data) });
     return res.data.task;
   },
-
   async updateTask(id, data) {
-    const res = await apiFetch(`/tasks/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(data),
-    });
-
+    const res = await apiFetch(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(data) });
     return res.data.task;
   },
-
   async completeTask(id) {
-    const res = await apiFetch(`/tasks/${id}/complete`, {
-      method: "PUT",
-    });
-
+    const res = await apiFetch(`/tasks/${id}/complete`, { method: "PUT" });
     return res.data.task;
   },
-
   async deleteTask(id) {
-    return apiFetch(`/tasks/${id}`, {
-      method: "DELETE",
-    });
+    return apiFetch(`/tasks/${id}`, { method: "DELETE" });
   },
 };
 
@@ -155,23 +130,21 @@ function TaskModal({ task, onClose, onSave, onDelete }) {
     }
   }
 
-async function handleMarkDone() {
-  if (!task?.task_id) return;
-
-  setSaving(true);
-
-  try {
-    await api.completeTask(task.task_id);
-    onClose();
-    window.location.reload();
-  } finally {
-    setSaving(false);
+  async function handleMarkDone() {
+    if (!task?.task_id) return;
+    setSaving(true);
+    try {
+      await api.completeTask(task.task_id);
+      onClose();
+      window.location.reload();
+    } finally {
+      setSaving(false);
+    }
   }
-}
+
   return (
     <div style={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div style={styles.modal}>
-        {/* Header */}
         <div style={styles.modalHeader}>
           <span style={styles.modalTitle}>{isNew ? "New Task" : "Task Details"}</span>
           <button style={styles.closeBtn} onClick={onClose}>✕</button>
@@ -179,25 +152,14 @@ async function handleMarkDone() {
 
         {error && <div style={styles.errorBanner}>{error}</div>}
 
-        {/* Fields */}
         <div style={styles.fieldGroup}>
           <label style={styles.label}>Title *</label>
-          <input
-            style={styles.input}
-            value={form.title}
-            onChange={(e) => set("title", e.target.value)}
-            placeholder="What needs to be done?"
-          />
+          <input style={styles.input} value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="What needs to be done?" />
         </div>
 
         <div style={styles.fieldGroup}>
           <label style={styles.label}>Description</label>
-          <textarea
-            style={{ ...styles.input, minHeight: 80, resize: "vertical" }}
-            value={form.description}
-            onChange={(e) => set("description", e.target.value)}
-            placeholder="Add more details…"
-          />
+          <textarea style={{ ...styles.input, minHeight: 80, resize: "vertical" }} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Add more details…" />
         </div>
 
         <div style={styles.row}>
@@ -230,31 +192,17 @@ async function handleMarkDone() {
           </div>
           <div style={{ ...styles.fieldGroup, flex: 1 }}>
             <label style={styles.label}>Due Date</label>
-            <input
-              type="datetime-local"
-              style={styles.input}
-              value={form.due_date}
-              onChange={(e) => set("due_date", e.target.value)}
-            />
+            <input type="datetime-local" style={styles.input} value={form.due_date} onChange={(e) => set("due_date", e.target.value)} />
           </div>
         </div>
 
-        {/* Actions */}
         <div style={styles.modalActions}>
           {!isNew && (
             <>
               {form.status !== "COMPLETED" && (
-                <button style={styles.doneBtn} onClick={handleMarkDone} disabled={saving}>
-                  ✓ Mark Done
-                </button>
+                <button style={styles.doneBtn} onClick={handleMarkDone} disabled={saving}>✓ Mark Done</button>
               )}
-              <button
-                style={styles.deleteBtn}
-                onClick={async () => { await onDelete(task.task_id); onClose(); }}
-                disabled={saving}
-              >
-                Delete
-              </button>
+              <button style={styles.deleteBtn} onClick={async () => { await onDelete(task.task_id); onClose(); }} disabled={saving}>Delete</button>
             </>
           )}
           <button style={styles.saveBtn} onClick={handleSave} disabled={saving}>
@@ -266,38 +214,322 @@ async function handleMarkDone() {
   );
 }
 
+// ─── Daily View ───────────────────────────────────────────────────────────────
+
+function DailyView({ tasks, year, month, selectedDay, setSelectedDay, onTaskClick, onAddTask }) {
+  const today = new Date();
+
+  // Use selectedDay or default to today
+  const day = selectedDay ?? today.getDate();
+  const displayDate = new Date(year, month, day);
+
+  const dayTasks = (tasks ?? []).filter(
+    (t) => t && t.due_date && isSameDay(t.due_date, displayDate)
+  );
+
+  function prevDay() {
+    const prev = new Date(year, month, day - 1);
+    setSelectedDay(prev.getDate());
+  }
+
+  function nextDay() {
+    const next = new Date(year, month, day + 1);
+    setSelectedDay(next.getDate());
+  }
+
+  const isToday =
+    today.getFullYear() === year &&
+    today.getMonth() === month &&
+    today.getDate() === day;
+
+  return (
+    <div>
+      {/* Day navigation */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <button style={styles.navBtn} onClick={prevDay}>‹</button>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontWeight: 700, fontSize: 20, color: "#3b0764" }}>
+            {DAYS[displayDate.getDay()]}, {MONTHS[month]} {day}
+          </div>
+          {isToday && (
+            <div style={{ fontSize: 11, color: "#A855F7", fontWeight: 600, marginTop: 2 }}>Today</div>
+          )}
+        </div>
+        <button style={styles.navBtn} onClick={nextDay}>›</button>
+      </div>
+
+      {/* Task count + add button */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 13, color: "#7e22ce", fontWeight: 600 }}>
+          {dayTasks.length} task{dayTasks.length !== 1 ? "s" : ""}
+        </span>
+        <button style={styles.addSmallBtn} onClick={() => onAddTask(day)}>+ Add Task</button>
+      </div>
+
+      {/* Task list for the day */}
+      {dayTasks.length === 0 ? (
+        <div style={styles.emptyDay}>
+          <span style={styles.emptyDayIcon}>📭</span>
+          <p>No tasks for this day.</p>
+        </div>
+      ) : (
+        <div style={styles.taskList}>
+          {dayTasks
+            .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+            .map((t) => {
+              const sc = STATUS_COLORS[t.status] ?? STATUS_COLORS.PENDING;
+              return (
+                <div
+                  key={t.task_id}
+                  style={{
+                    ...styles.taskCard,
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                  }}
+                  onClick={() => onTaskClick(t)}
+                >
+                  {/* Time column */}
+                  <div style={{ minWidth: 52, textAlign: "center", paddingTop: 2 }}>
+                    {t.due_date ? (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#A855F7" }}>
+                        {new Date(t.due_date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 11, color: "#a78bca" }}>No time</span>
+                    )}
+                  </div>
+
+                  {/* Vertical line */}
+                  <div style={{ width: 3, borderRadius: 2, alignSelf: "stretch", background: sc.dot, flexShrink: 0 }} />
+
+                  {/* Task info */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ ...styles.statusBadge, background: sc.bg, color: sc.text }}>
+                        <span style={{ ...styles.dot, background: sc.dot, marginRight: 4 }} />
+                        {t.status.replace("_", " ")}
+                      </span>
+                      <span style={{ ...styles.priorityBadge, color: PRIORITY_COLORS[t.priority] }}>
+                        {t.priority}
+                      </span>
+                    </div>
+                    <p style={styles.taskTitle}>{t.title}</p>
+                    {t.description && (
+                      <p style={styles.taskDesc}>{t.description.slice(0, 80)}{t.description.length > 80 ? "…" : ""}</p>
+                    )}
+                    <span style={styles.taskMetaItem}>⚡ {DIFFICULTY_LABELS[t.difficulty]}</span>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Weekly View ──────────────────────────────────────────────────────────────
+
+function WeeklyView({ tasks, year, month, selectedDay, setSelectedDay, onTaskClick, onAddTask }) {
+  const today = new Date();
+
+  // Compute the start of the week (Sunday) containing selectedDay or today
+  const anchorDay = selectedDay ?? today.getDate();
+  const anchorDate = new Date(year, month, anchorDay);
+  const startOfWeek = new Date(anchorDate);
+  startOfWeek.setDate(anchorDate.getDate() - anchorDate.getDay()); // rewind to Sunday
+
+  // Build 7 day objects for the week
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return d;
+  });
+
+  function prevWeek() {
+    const prev = new Date(startOfWeek);
+    prev.setDate(prev.getDate() - 7);
+    setSelectedDay(prev.getDate());
+  }
+
+  function nextWeek() {
+    const next = new Date(startOfWeek);
+    next.setDate(next.getDate() + 7);
+    setSelectedDay(next.getDate());
+  }
+
+  const endOfWeek = weekDays[6];
+  const weekLabel =
+    startOfWeek.getMonth() === endOfWeek.getMonth()
+      ? `${MONTHS[startOfWeek.getMonth()]} ${startOfWeek.getDate()} – ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`
+      : `${MONTHS[startOfWeek.getMonth()]} ${startOfWeek.getDate()} – ${MONTHS[endOfWeek.getMonth()]} ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+
+  return (
+    <div>
+      {/* Week navigation */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <button style={styles.navBtn} onClick={prevWeek}>‹</button>
+        <span style={{ fontWeight: 700, fontSize: 15, color: "#3b0764" }}>{weekLabel}</span>
+        <button style={styles.navBtn} onClick={nextWeek}>›</button>
+      </div>
+
+      {/* 7 day columns */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+        {weekDays.map((date) => {
+          const isToday = isSameDay(date, today);
+          const isSelected = selectedDay !== null &&
+            date.getFullYear() === year &&
+            date.getMonth() === month &&
+            date.getDate() === selectedDay;
+
+          const dayTasks = (tasks ?? []).filter(
+            (t) => t && t.due_date && isSameDay(t.due_date, date)
+          );
+
+          return (
+            <div
+              key={date.toISOString()}
+              onClick={() => setSelectedDay(date.getDate())}
+              style={{
+                borderRadius: 12,
+                padding: "8px 6px",
+                minHeight: 120,
+                cursor: "pointer",
+                background: isSelected ? "#e9d5ff" : isToday ? "#f3e8ff" : "#faf5ff",
+                border: isToday || isSelected ? "1.5px solid #A855F7" : "1.5px solid #ddb6fc",
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                transition: "background 0.15s",
+              }}
+            >
+              {/* Day header */}
+              <div style={{ textAlign: "center", marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#a78bca" }}>
+                  {DAYS[date.getDay()]}
+                </div>
+                <div style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  background: isToday ? "#A855F7" : "transparent",
+                  color: isToday ? "#fff" : "#3b0764",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                }}>
+                  {date.getDate()}
+                </div>
+              </div>
+
+              {/* Task pills */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
+                {dayTasks.slice(0, 3).map((t) => {
+                  const sc = STATUS_COLORS[t.status] ?? STATUS_COLORS.PENDING;
+                  return (
+                    <div
+                      key={t.task_id}
+                      onClick={(e) => { e.stopPropagation(); onTaskClick(t); }}
+                      style={{
+                        background: sc.bg,
+                        color: sc.text,
+                        borderRadius: 6,
+                        padding: "2px 5px",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {t.title}
+                    </div>
+                  );
+                })}
+                {dayTasks.length > 3 && (
+                  <div style={{ fontSize: 10, color: "#a78bca", textAlign: "center" }}>
+                    +{dayTasks.length - 3} more
+                  </div>
+                )}
+              </div>
+
+              {/* Add button on hover — always visible on mobile */}
+              <button
+                onClick={(e) => { e.stopPropagation(); onAddTask(date.getDate()); }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "#A855F7",
+                  fontSize: 16,
+                  cursor: "pointer",
+                  textAlign: "center",
+                  padding: 0,
+                  marginTop: "auto",
+                }}
+              >
+                +
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Selected day task detail below the grid */}
+      {selectedDay !== null && (() => {
+        const selDate = new Date(year, month, selectedDay);
+        const selTasks = (tasks ?? []).filter(
+          (t) => t && t.due_date && isSameDay(t.due_date, selDate)
+        );
+        return selTasks.length > 0 ? (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#3b0764", marginBottom: 8 }}>
+              {MONTHS[selDate.getMonth()]} {selectedDay} — {selTasks.length} task{selTasks.length !== 1 ? "s" : ""}
+            </p>
+            <div style={styles.taskList}>
+              {selTasks.map((t) => (
+                <TaskCard key={t.task_id} task={t} onClick={() => onTaskClick(t)} />
+              ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function DashboardCalendar() {
-    const today = new Date();
-    const [year, setYear] = useState(today.getFullYear());
-    const [month, setMonth] = useState(today.getMonth());
-    const [rawTasks, setRawTasks] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [fetchError, setFetchError] = useState(null);
-    const [modalTask, setModalTask] = useState(null);  // null = closed, {} = new, task = edit
-    const [selectedDay, setSelectedDay] = useState(null);
-    const now = new Date();
-    const tasks = rawTasks.map((t) =>
+  const today = new Date();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
+  const [rawTasks, setRawTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [modalTask, setModalTask] = useState(null);
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [calView, setCalView] = useState<"monthly" | "weekly" | "daily">("monthly");
+
+  const now = new Date();
+  const tasks = rawTasks.map((t) =>
     t.status === "PENDING" && t.due_date && new Date(t.due_date) < now
-        ? { ...t, status: "OVERDUE" }
-        : t
-    );
-  
-  // Load tasks
+      ? { ...t, status: "OVERDUE" }
+      : t
+  );
+
   useEffect(() => {
-  api.getTasks()
-    .then((data) => {
-      setRawTasks(Array.isArray(data) ? data : []);
-    })
-    .catch((e) => {
-      console.error(e);
-      setFetchError(e.message);
-      setRawTasks([]);
-    })
-    .finally(() => setLoading(false));
-}, []);
-  // Calendar grid
+    api.getTasks()
+      .then((data) => setRawTasks(Array.isArray(data) ? data : []))
+      .catch((e) => { console.error(e); setFetchError(e.message); setRawTasks([]); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Monthly grid helpers
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
   const cells = Array(firstDay).fill(null).concat(
@@ -306,8 +538,7 @@ export default function DashboardCalendar() {
 
   function tasksForDay(day) {
     const d = new Date(year, month, day);
-    return (tasks ?? []).filter(
-    (t) => t && t.due_date && isSameDay(t.due_date, d));
+    return (tasks ?? []).filter((t) => t && t.due_date && isSameDay(t.due_date, d));
   }
 
   function prevMonth() {
@@ -320,24 +551,14 @@ export default function DashboardCalendar() {
   }
 
   async function handleSave(payload) {
-  if (modalTask?.task_id) {
-    const updated = await api.updateTask(modalTask.task_id, payload);
-
-    console.log("UPDATED TASK:", updated);
-
-    setRawTasks((ts) =>
-      ts.map((t) =>
-        t.task_id === updated.task_id ? updated : t
-      )
-    );
-  } else {
-    const created = await api.createTask(payload);
-
-    console.log("CREATED TASK:", created);
-
-    setRawTasks((ts) => [...ts, created]);
+    if (modalTask?.task_id) {
+      const updated = await api.updateTask(modalTask.task_id, payload);
+      setRawTasks((ts) => ts.map((t) => t.task_id === updated.task_id ? updated : t));
+    } else {
+      const created = await api.createTask(payload);
+      if (created) setRawTasks((ts) => [...ts, created]);
+    }
   }
-}
 
   async function handleDelete(id) {
     await api.deleteTask(id);
@@ -345,146 +566,186 @@ export default function DashboardCalendar() {
   }
 
   function openNew(day) {
-    const due = day
-      ? new Date(year, month, day, 12, 0).toISOString()
-      : null;
+    const due = day ? new Date(year, month, day, 12, 0).toISOString() : null;
     setModalTask({ _prefillDueDate: due });
   }
 
   const selectedTasks = selectedDay ? tasksForDay(selectedDay) : [];
 
   return (
-    <div style={styles.page}>
-      {/* ── Page Header ── */}
-      <div style={styles.pageHeader}>
-        <div>
-          <h1 style={styles.pageTitle}>Dashboard</h1>
-          <p style={styles.pageSubtitle}>
-            {today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-          </p>
-        </div>
-        <button style={styles.addBtn} onClick={() => openNew(null)}>
-          <span style={styles.addBtnPlus}>+</span> New Task
-        </button>
-      </div>
-
-      <div style={styles.layout}>
-        {/* ── Calendar ── */}
-        <div style={styles.calendarCard}>
-          {/* Month nav */}
-          <div style={styles.calendarNav}>
-            <button style={styles.navBtn} onClick={prevMonth}>‹</button>
-            <span style={styles.monthLabel}>{MONTHS[month]} {year}</span>
-            <button style={styles.navBtn} onClick={nextMonth}>›</button>
+    <div style={styles.pageWrapper}>
+      <div style={styles.page}>
+        {/* ── Page Header ── */}
+        <div style={styles.pageHeader}>
+          <div>
+            <h1 style={styles.pageTitle}>Dashboard</h1>
+            <p style={styles.pageSubtitle}>
+              {today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            </p>
           </div>
-
-          {/* Day names */}
-          <div style={styles.calGrid}>
-            {DAYS.map((d) => (
-              <div key={d} style={styles.dayName}>{d}</div>
-            ))}
-          </div>
-
-          {/* Date cells */}
-          <div style={styles.calGrid}>
-            {cells.map((day, i) => {
-              if (!day) return <div key={`empty-${i}`} />;
-              const dayTasks = tasksForDay(day);
-              const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
-              const isSelected = selectedDay === day;
-              return (
-                <div
-                  key={day}
-                  style={{
-                    ...styles.dayCell,
-                    ...(isToday ? styles.dayCellToday : {}),
-                    ...(isSelected ? styles.dayCellSelected : {}),
-                  }}
-                  onClick={() => setSelectedDay(isSelected ? null : day)}
-                >
-                  <span style={{
-                    ...styles.dayNum,
-                    ...(isToday ? styles.dayNumToday : {}),
-                  }}>{day}</span>
-                  <div style={styles.taskDots}>
-                    {dayTasks.slice(0, 3).map((t) => (
-                      <span
-                        key={t.task_id}
-                        style={{
-                          ...styles.dot,
-                          background: STATUS_COLORS[t.status]?.dot ?? "#9ca3af",
-                        }}
-                      />
-                    ))}
-                    {dayTasks.length > 3 && (
-                      <span style={styles.dotMore}>+{dayTasks.length - 3}</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div style={styles.legend}>
-            {Object.entries(STATUS_COLORS).map(([k, v]) => (
-              <div key={k} style={styles.legendItem}>
-                <span style={{ ...styles.dot, background: v.dot }} />
-                <span style={styles.legendLabel}>{k.replace("_", " ")}</span>
-              </div>
-            ))}
-          </div>
+          <button style={styles.addBtn} onClick={() => openNew(null)}>
+            <span style={styles.addBtnPlus}>+</span> New Task
+          </button>
         </div>
 
-        {/* ── Side Panel ── */}
-        <div style={styles.sidePanel}>
-          {selectedDay ? (
-            <>
-              <div style={styles.sidePanelHeader}>
-                <span style={styles.sidePanelTitle}>
-                  {MONTHS[month]} {selectedDay}
-                </span>
+        <div style={styles.layout}>
+          {/* ── Calendar ── */}
+          <div style={styles.calendarCard}>
+
+            {/* View toggle */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+              {(["daily", "weekly", "monthly"] as const).map((v) => (
                 <button
-                  style={styles.addSmallBtn}
-                  onClick={() => openNew(selectedDay)}
+                  key={v}
+                  onClick={() => setCalView(v)}
+                  style={{
+                    ...styles.navBtn,
+                    background: calView === v ? "#A855F7" : "#e9d5ff",
+                    color: calView === v ? "#fff" : "#7e22ce",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "0 12px",
+                    width: "auto",
+                  }}
                 >
-                  + Add
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
                 </button>
+              ))}
+            </div>
+
+            {/* Month/period nav — shown for monthly and weekly, hidden for daily */}
+            {calView !== "daily" && (
+              <div style={styles.calendarNav}>
+                <button style={styles.navBtn} onClick={prevMonth}>‹</button>
+                <span style={styles.monthLabel}>{MONTHS[month]} {year}</span>
+                <button style={styles.navBtn} onClick={nextMonth}>›</button>
               </div>
+            )}
 
-              {selectedTasks.length === 0 ? (
-                <div style={styles.emptyDay}>
-                  <span style={styles.emptyDayIcon}>📭</span>
-                  <p>No tasks this day.</p>
-
-                </div>
-              ) : (
-                <div style={styles.taskList}>
-                  {selectedTasks.map((t) => (
-                    <TaskCard key={t.task_id} task={t} onClick={() => setModalTask(t)} />
+            {/* ── Monthly View ── */}
+            {calView === "monthly" && (
+              <>
+                {/* Day names header */}
+                <div style={styles.calGrid}>
+                  {DAYS.map((d) => (
+                    <div key={d} style={styles.dayName}>{d}</div>
                   ))}
                 </div>
-              )}
-            </>
-          ) : (
-            <UpcomingTasks tasks={tasks} onTaskClick={setModalTask} />
-          )}
+
+                {/* Date cells */}
+                <div style={styles.calGrid}>
+                  {cells.map((day, i) => {
+                    if (!day) return <div key={`empty-${i}`} />;
+                    const dayTasks = tasksForDay(day);
+                    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+                    const isSelected = selectedDay === day;
+                    return (
+                      <div
+                        key={day}
+                        style={{
+                          ...styles.dayCell,
+                          ...(isToday ? styles.dayCellToday : {}),
+                          ...(isSelected ? styles.dayCellSelected : {}),
+                        }}
+                        onClick={() => setSelectedDay(isSelected ? null : day)}
+                      >
+                        <span style={{ ...styles.dayNum, ...(isToday ? styles.dayNumToday : {}) }}>
+                          {day}
+                        </span>
+                        <div style={styles.taskDots}>
+                          {dayTasks.slice(0, 3).map((t) => (
+                            <span key={t.task_id} style={{ ...styles.dot, background: STATUS_COLORS[t.status]?.dot ?? "#9ca3af" }} />
+                          ))}
+                          {dayTasks.length > 3 && (
+                            <span style={styles.dotMore}>+{dayTasks.length - 3}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Legend */}
+                <div style={styles.legend}>
+                  {Object.entries(STATUS_COLORS).map(([k, v]) => (
+                    <div key={k} style={styles.legendItem}>
+                      <span style={{ ...styles.dot, background: v.dot }} />
+                      <span style={styles.legendLabel}>{k.replace("_", " ")}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* ── Weekly View ── */}
+            {calView === "weekly" && (
+              <WeeklyView
+                tasks={tasks}
+                year={year}
+                month={month}
+                selectedDay={selectedDay}
+                setSelectedDay={setSelectedDay}
+                onTaskClick={setModalTask}
+                onAddTask={openNew}
+              />
+            )}
+
+            {/* ── Daily View ── */}
+            {calView === "daily" && (
+              <DailyView
+                tasks={tasks}
+                year={year}
+                month={month}
+                selectedDay={selectedDay}
+                setSelectedDay={setSelectedDay}
+                onTaskClick={setModalTask}
+                onAddTask={openNew}
+              />
+            )}
+
+          </div>
+
+          {/* ── Side Panel ── */}
+          <div style={styles.sidePanel}>
+            {selectedDay ? (
+              <>
+                <div style={styles.sidePanelHeader}>
+                  <span style={styles.sidePanelTitle}>{MONTHS[month]} {selectedDay}</span>
+                  <button style={styles.addSmallBtn} onClick={() => openNew(selectedDay)}>+ Add</button>
+                </div>
+                {selectedTasks.length === 0 ? (
+                  <div style={styles.emptyDay}>
+                    <span style={styles.emptyDayIcon}>📭</span>
+                    <p>No tasks this day.</p>
+                  </div>
+                ) : (
+                  <div style={styles.taskList}>
+                    {selectedTasks.map((t) => (
+                      <TaskCard key={t.task_id} task={t} onClick={() => setModalTask(t)} />
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <UpcomingTasks tasks={tasks} onTaskClick={setModalTask} />
+            )}
+          </div>
         </div>
+
+        {loading && <div style={styles.loadingBar}>Loading tasks…</div>}
+        {fetchError && <div style={styles.errorBanner}>Failed to load tasks: {fetchError}</div>}
+
+        {modalTask !== null && (
+          <TaskModal
+            task={modalTask?._prefillDueDate !== undefined
+              ? { due_date: modalTask._prefillDueDate }
+              : modalTask}
+            onClose={() => setModalTask(null)}
+            onSave={handleSave}
+            onDelete={handleDelete}
+          />
+        )}
       </div>
-
-      {loading && <div style={styles.loadingBar}>Loading tasks…</div>}
-      {fetchError && <div style={styles.errorBanner}>Failed to load tasks: {fetchError}</div>}
-
-      {modalTask !== null && (
-        <TaskModal
-          task={modalTask?._prefillDueDate !== undefined
-            ? { due_date: modalTask._prefillDueDate }
-            : modalTask}
-          onClose={() => setModalTask(null)}
-          onSave={handleSave}
-          onDelete={handleDelete}
-        />
-      )}
     </div>
   );
 }
@@ -496,18 +757,11 @@ function TaskCard({ task, onClick }) {
   return (
     <div style={styles.taskCard} onClick={onClick}>
       <div style={styles.taskCardTop}>
-        <span style={{
-          ...styles.statusBadge,
-          background: sc.bg,
-          color: sc.text,
-        }}>
+        <span style={{ ...styles.statusBadge, background: sc.bg, color: sc.text }}>
           <span style={{ ...styles.dot, background: sc.dot, marginRight: 4 }} />
           {task.status.replace("_", " ")}
         </span>
-        <span style={{
-          ...styles.priorityBadge,
-          color: PRIORITY_COLORS[task.priority],
-        }}>
+        <span style={{ ...styles.priorityBadge, color: PRIORITY_COLORS[task.priority] }}>
           {task.priority}
         </span>
       </div>
@@ -532,7 +786,7 @@ function TaskCard({ task, onClick }) {
 function UpcomingTasks({ tasks, onTaskClick }) {
   const upcoming = [...tasks]
     .filter((t) => t && t.due_date && t.status !== "COMPLETED")
-    .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
+    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
     .slice(0, 8);
 
   return (

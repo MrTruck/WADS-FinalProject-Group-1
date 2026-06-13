@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       users: { total: totalUsers, new_last_7_days: recentUsers },
       tasks: {
         total: totalTasks,
-        by_status: Object.fromEntries(taskStatusBreakdown.map((t) => [t.status, t._count.status])),
+        by_status: Object.fromEntries(taskStatusBreakdown.map((t: any) => [t.status, t._count.status])),
       },
       sessions: { total: totalSessions },
       ai: {

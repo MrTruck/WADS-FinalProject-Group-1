@@ -176,20 +176,43 @@ export async function fetchUserAnalytics(userId: string): Promise<UserAnalytics>
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Upcoming tasks (pending/in-progress, due in next 14 days)
-  const fourteenDaysLater = new Date(now);
-  fourteenDaysLater.setDate(fourteenDaysLater.getDate() + 14);
-  const upcomingTasks = tasks
-  .filter(
-    (t: Task) =>
+  // Pending/in-progress tasks due within the next 14 days.
+// Overdue tasks are also included because they need urgent prioritization.
+const fourteenDaysLater = new Date(now);
+fourteenDaysLater.setDate(
+  fourteenDaysLater.getDate() + 14
+);
+
+const upcomingTasks = tasks
+  .filter((t: Task) => {
+    const isActive =
       t.status === "PENDING" ||
-      t.status === "IN_PROGRESS"
-  )
+      t.status === "IN_PROGRESS";
+
+    if (!isActive) {
+      return false;
+    }
+
+    // Keep tasks without due dates, but they will sort last.
+    if (!t.due_date) {
+      return true;
+    }
+
+    // Includes overdue tasks and tasks due within 14 days.
+    return t.due_date <= fourteenDaysLater;
+  })
   .sort((a: Task, b: Task) => {
-    const aTime = a.due_date?.getTime() ?? Infinity;
-    const bTime = b.due_date?.getTime() ?? Infinity;
+    const aTime =
+      a.due_date?.getTime() ??
+      Number.POSITIVE_INFINITY;
+
+    const bTime =
+      b.due_date?.getTime() ??
+      Number.POSITIVE_INFINITY;
+
     return aTime - bTime;
   })
-  
+  .slice(0, 20);
 
   // Study session stats
   const sessionCount = sessions.length;

@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import PomodoroWidget from "../components/PomodoroWidget";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const POMODORO_MODES = {
+  WORK: "work",
+  SHORT_BREAK: "short_break",
+  LONG_BREAK: "long_break",
+};
+
+
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
@@ -71,6 +80,34 @@ async function apiFetch(path, options: any = {}) {
   return res.json();
 }
 
+async function runAIPrioritization() {
+  const csrfToken = getCsrfToken();
+
+  const response = await fetch("/api/ai/prioritize", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(csrfToken
+        ? { "x-csrf-token": csrfToken }
+        : {}),
+    },
+    credentials: "include",
+    body: JSON.stringify({}),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      data.error ||
+      "AI prioritization failed"
+    );
+  }
+
+  return data.tasks ?? [];
+}
+
 const api = {
   async getTasks() {
     const data = await apiFetch("/tasks");
@@ -91,6 +128,22 @@ const api = {
   async deleteTask(id) {
     return apiFetch(`/tasks/${id}`, { method: "DELETE" });
   },
+  async getPomodoroSettings() {
+    const data = await apiFetch("/pomodoro/settings");
+    return data.data?.settings ?? {};
+  },
+  async updatePomodoroSettings(settings) {
+    const res = await apiFetch("/pomodoro/settings", { method: "PUT", body: JSON.stringify(settings) });
+    return res.data?.settings ?? {};
+  },
+  async createPomodoroCycle(cycle) {
+    const res = await apiFetch("/pomodoro/cycle", { method: "POST", body: JSON.stringify(cycle) });
+    return res.data?.cycle ?? null;
+  },
+  async getPomodoroCycles() {
+    const data = await apiFetch("/pomodoro/cycles");
+    return data.data?.cycles ?? [];
+  },
 };
 
 // ─── Task Modal ───────────────────────────────────────────────────────────────
@@ -98,14 +151,13 @@ const api = {
 function TaskModal({ task, onClose, onSave, onDelete }) {
   const isNew = !task?.task_id;
   const [form, setForm] = useState({
-    title: task?.title ?? "",
-    description: task?.description ?? "",
-    status: task?.status ?? "PENDING",
-    priority: task?.priority ?? "MEDIUM",
-    difficulty: task?.difficulty ?? "MEDIUM",
-    due_date: task?.due_date
-      ? new Date(task.due_date).toISOString().slice(0, 16)
-      : "",
+  title: task?.title ?? "",
+  description: task?.description ?? "",
+  status: task?.status ?? "PENDING",
+  difficulty: task?.difficulty ?? "MEDIUM",
+  due_date: task?.due_date
+    ? new Date(task.due_date).toISOString().slice(0, 16)
+    : "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -113,22 +165,30 @@ function TaskModal({ task, onClose, onSave, onDelete }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   async function handleSave() {
-    if (!form.title.trim()) { setError("Title is required."); return; }
-    setSaving(true);
-    setError(null);
-    try {
-      const payload = {
-        ...form,
-        due_date: form.due_date ? new Date(form.due_date).toISOString() : null,
-      };
-      await onSave(payload);
-      onClose();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSaving(false);
-    }
+  if (!form.title.trim()) {
+    setError("Title is required.");
+    return;
   }
+
+  setSaving(true);
+  setError(null);
+
+  try {
+    const payload = {
+      ...form,
+      due_date: form.due_date
+        ? new Date(form.due_date).toISOString()
+        : null,
+    };
+
+    await onSave(payload);
+    onClose();
+  } catch (e: any) {
+    setError(e.message);
+  } finally {
+    setSaving(false);
+  }
+}
 
   async function handleMarkDone() {
     if (!task?.task_id) return;
@@ -172,12 +232,21 @@ function TaskModal({ task, onClose, onSave, onDelete }) {
             </select>
           </div>
           <div style={{ ...styles.fieldGroup, flex: 1 }}>
-            <label style={styles.label}>Priority</label>
-            <select style={styles.input} value={form.priority} onChange={(e) => set("priority", e.target.value)}>
-              {["LOW","MEDIUM","HIGH","URGENT"].map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
+            <label style={styles.label}>AI Urgency</label>
+            <div
+              style={{
+                ...styles.input,
+                background: "#f3e8ff",
+                fontWeight: 700,
+                color: task?.priority
+                  ? PRIORITY_COLORS[task.priority]
+                  : "#7e22ce",
+                cursor: "default",
+              }}>
+              {isNew
+                ? "Assigned automatically after creation"
+                : task?.priority ?? "Calculating..."}
+            </div>
           </div>
         </div>
 
@@ -213,6 +282,10 @@ function TaskModal({ task, onClose, onSave, onDelete }) {
     </div>
   );
 }
+
+// ─── Pomodoro Timer ───────────────────────────────────────────────────────────
+
+// Pomodoro timer moved to its own page. Use the compact widget here.
 
 // ─── Daily View ───────────────────────────────────────────────────────────────
 
@@ -375,7 +448,7 @@ function WeeklyView({ tasks, year, month, selectedDay, setSelectedDay, onTaskCli
       </div>
 
       {/* 7 day columns */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, alignItems: "start" }}>
         {weekDays.map((date) => {
           const isToday = isSameDay(date, today);
           const isSelected = selectedDay !== null &&
@@ -515,20 +588,62 @@ export default function DashboardCalendar() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [calView, setCalView] = useState<"monthly" | "weekly" | "daily">("monthly");
 
+  const [showUpcoming, setShowUpcoming] = useState(true);
+
   const now = new Date();
   const tasks = rawTasks.map((t) =>
     t.status === "PENDING" && t.due_date && new Date(t.due_date) < now
       ? { ...t, status: "OVERDUE" }
       : t
   );
-
   useEffect(() => {
-    api.getTasks()
-      .then((data) => setRawTasks(Array.isArray(data) ? data : []))
-      .catch((e) => { console.error(e); setFetchError(e.message); setRawTasks([]); })
-      .finally(() => setLoading(false));
-  }, []);
+  let cancelled = false;
 
+  async function loadDashboard() {
+    try {
+      setLoading(true);
+      setFetchError(null);
+
+      const existingTasks =
+        await api.getTasks();
+
+      if (!cancelled) {
+        setRawTasks(
+          Array.isArray(existingTasks)
+            ? existingTasks
+            : []
+        );
+      }
+
+      const prioritizedTasks =
+        await runAIPrioritization();
+
+      if (!cancelled) {
+        setRawTasks(
+          Array.isArray(prioritizedTasks)
+            ? prioritizedTasks
+            : []
+        );
+      }
+    } catch (error: any) {
+      console.error(error);
+
+      if (!cancelled) {
+        setFetchError(error.message);
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  }
+
+  loadDashboard();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
   // Monthly grid helpers
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
@@ -550,15 +665,27 @@ export default function DashboardCalendar() {
     else setMonth(m => m + 1);
   }
 
-  async function handleSave(payload) {
-    if (modalTask?.task_id) {
-      const updated = await api.updateTask(modalTask.task_id, payload);
-      setRawTasks((ts) => ts.map((t) => t.task_id === updated.task_id ? updated : t));
-    } else {
-      const created = await api.createTask(payload);
-      if (created) setRawTasks((ts) => [...ts, created]);
-    }
+async function handleSave(payload: any) {
+  if (modalTask?.task_id) {
+    await api.updateTask(
+      modalTask.task_id,
+      payload
+    );
+  } else {
+    await api.createTask(payload);
   }
+
+  await runAIPrioritization();
+
+  const refreshedTasks =
+    await api.getTasks();
+
+  setRawTasks(
+    Array.isArray(refreshedTasks)
+      ? refreshedTasks
+      : []
+  );
+}
 
   async function handleDelete(id) {
     await api.deleteTask(id);
@@ -587,6 +714,8 @@ export default function DashboardCalendar() {
             <span style={styles.addBtnPlus}>+</span> New Task
           </button>
         </div>
+
+        
 
         <div style={styles.layout}>
           {/* ── Calendar ── */}
@@ -647,7 +776,10 @@ export default function DashboardCalendar() {
                           ...(isToday ? styles.dayCellToday : {}),
                           ...(isSelected ? styles.dayCellSelected : {}),
                         }}
-                        onClick={() => setSelectedDay(isSelected ? null : day)}
+                        onClick={() => {
+                          setSelectedDay(isSelected ? null : day);
+                          setShowUpcoming(false);
+                        }}
                       >
                         <span style={{ ...styles.dayNum, ...(isToday ? styles.dayNumToday : {}) }}>
                           {day}
@@ -707,9 +839,19 @@ export default function DashboardCalendar() {
 
           {/* ── Side Panel ── */}
           <div style={styles.sidePanel}>
-            {selectedDay ? (
+            {selectedDay && !showUpcoming? (
               <>
+                
                 <div style={styles.sidePanelHeader}>
+                  <button
+                  style={styles.addSmallBtn}
+                  onClick={() => {
+                    setShowUpcoming(true);
+                    setSelectedDay(null);
+                  }}
+                >
+                  Upcoming
+                </button>
                   <span style={styles.sidePanelTitle}>{MONTHS[month]} {selectedDay}</span>
                   <button style={styles.addSmallBtn} onClick={() => openNew(selectedDay)}>+ Add</button>
                 </div>
@@ -731,6 +873,10 @@ export default function DashboardCalendar() {
             )}
           </div>
         </div>
+        <div style={styles.layoutTop}>
+          {/* ── Pomodoro Timer (widget) ── */}
+            <PomodoroWidget />
+        </div> 
 
         {loading && <div style={styles.loadingBar}>Loading tasks…</div>}
         {fetchError && <div style={styles.errorBanner}>Failed to load tasks: {fetchError}</div>}
@@ -785,7 +931,7 @@ function TaskCard({ task, onClick }) {
 
 function UpcomingTasks({ tasks, onTaskClick }) {
   const upcoming = [...tasks]
-    .filter((t) => t && t.due_date && t.status !== "COMPLETED")
+    .filter((t) => t && t.due_date && t.status === "PENDING")
     .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
     .slice(0, 8);
 
@@ -841,6 +987,10 @@ const styles = {
     gridTemplateColumns: "1fr 360px",
     gap: 24,
     alignItems: "start",
+  },
+  layoutTop: {
+    marginBottom: 24,
+    marginTop: 24,
   },
   calendarCard: {
     background: "#f3e8ff",
@@ -1201,5 +1351,126 @@ const styles = {
     padding: "6px",
     fontSize: 13,
     zIndex: 2000,
+  },
+  pomodoroCard: {
+    background: "#f3e8ff",
+    borderRadius: 16,
+    padding: 24,
+    boxShadow: "none",
+  },
+  pomodoroHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+  },
+  pomodoroTitle: {
+    fontSize: 18,
+    fontWeight: 700,
+    margin: "0 0 4px",
+    color: "#3b0764",
+    letterSpacing: "-0.3px",
+  },
+  settingsBtn: {
+    background: "#e9d5ff",
+    border: "none",
+    borderRadius: 8,
+    width: 36,
+    height: 36,
+    fontSize: 16,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background 0.15s",
+  },
+  pomodoroSettings: {
+    background: "#faf5ff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    border: "1.5px solid #ddb6fc",
+  },
+  settingRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    gap: 12,
+  },
+  settingLabel: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#581c87",
+    flex: 1,
+  },
+  settingCheckboxLabel: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#581c87",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flex: 1,
+    cursor: "pointer",
+  },
+  settingInput: {
+    width: 60,
+    padding: "6px 8px",
+    border: "1.5px solid #ddb6fc",
+    borderRadius: 6,
+    fontSize: 13,
+    color: "#3b0764",
+    background: "#faf5ff",
+    boxSizing: "border-box",
+  },
+  saveSettingsBtn: {
+    width: "100%",
+    background: "#A855F7",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: "8px 12px",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    marginTop: 12,
+  },
+  pomodoroModeLabel: {
+    fontSize: 14,
+    fontWeight: 700,
+    marginBottom: 8,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+  },
+  pomodoroTimer: {
+    fontSize: 56,
+    fontWeight: 700,
+    color: "#3b0764",
+    letterSpacing: "-1px",
+    fontFamily: "'Courier New', monospace",
+    marginBottom: 8,
+  },
+  pomodoroProgress: {
+    fontSize: 13,
+    color: "#a78bca",
+    fontWeight: 600,
+  },
+  pomodoroControls: {
+    display: "flex",
+    gap: 12,
+    justifyContent: "center",
+  },
+  pomodoroBtn: {
+    background: "#A855F7",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 20px",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    flex: 1,
+    transition: "opacity 0.15s",
   },
 };

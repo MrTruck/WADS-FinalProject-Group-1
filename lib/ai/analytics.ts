@@ -8,6 +8,7 @@ export type UserAnalytics = {
   // Task overview
   totalTasks: number;
   pendingTasks: number;
+  activePendingTasks: number;
   inProgressTasks: number;
   completedTasks: number;
   overdueTasks: number;
@@ -165,6 +166,12 @@ export async function fetchUserAnalytics(userId: string): Promise<UserAnalytics>
   const overdueTasks = tasks.filter(
     (t:Task) => t.status === "PENDING" && t.due_date && t.due_date < now
   ).length;
+  const activePendingTasks =
+  tasks.filter(
+    (t:Task) =>
+      t.status === "PENDING" &&
+      (!t.due_date || t.due_date >= now)
+  ).length;
   const completionRate =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -172,23 +179,17 @@ export async function fetchUserAnalytics(userId: string): Promise<UserAnalytics>
   const fourteenDaysLater = new Date(now);
   fourteenDaysLater.setDate(fourteenDaysLater.getDate() + 14);
   const upcomingTasks = tasks
-    .filter(
-      (t:Task) =>
-        (t.status === "PENDING" || t.status === "IN_PROGRESS") &&
-        t.due_date &&
-        t.due_date <= fourteenDaysLater
-    )
-    .sort((a: Task , b:Task) => (a.due_date?.getTime() ?? 0) - (b.due_date?.getTime() ?? 0))
-    .slice(0, 10)
-    .map((t:Task) => ({
-      task_id: t.task_id,
-      title: t.title,
-      priority: t.priority,
-      difficulty: t.difficulty,
-      due_date: t.due_date,
-      estimated_hours: t.estimated_hours,
-      status: t.status,
-    }));
+  .filter(
+    (t: Task) =>
+      t.status === "PENDING" ||
+      t.status === "IN_PROGRESS"
+  )
+  .sort((a: Task, b: Task) => {
+    const aTime = a.due_date?.getTime() ?? Infinity;
+    const bTime = b.due_date?.getTime() ?? Infinity;
+    return aTime - bTime;
+  })
+  
 
   // Study session stats
   const sessionCount = sessions.length;
@@ -208,6 +209,7 @@ export async function fetchUserAnalytics(userId: string): Promise<UserAnalytics>
   return {
     totalTasks,
     pendingTasks,
+    activePendingTasks,
     inProgressTasks,
     completedTasks,
     overdueTasks,

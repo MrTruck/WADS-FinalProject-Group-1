@@ -59,15 +59,30 @@ export function middleware(request: NextRequest) {
     )
   }
 
-  if (MUTATING_METHODS.includes(method)) {
-    const csrfToken = request.headers.get('x-csrf-token')
-    if (!csrfToken) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden', message: 'CSRF token missing' },
-        { status: 403 }
-      )
-    }
+  const isAIRoute =
+  pathname.startsWith("/api/ai");
+
+if (
+  MUTATING_METHODS.includes(method)
+  && !isAIRoute
+) {
+
+  const csrfToken =
+    request.headers.get("x-csrf-token");
+
+  if (!csrfToken) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Forbidden",
+        message: "CSRF token missing"
+      },
+      {
+        status: 403
+      }
+    );
   }
+}
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set('x-user-id', payload.userId || '')

@@ -1,3 +1,39 @@
+/**
+ * @swagger
+ * /api/v1/tasks/{id}:
+ *   put:
+ *     summary: Update a task
+ *     tags: [Tasks]
+ *     security: [{ cookieAuth: [] }, { csrfToken: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title: { type: string }
+ *               description: { type: string }
+ *               status: { type: string, enum: [PENDING, IN_PROGRESS, COMPLETED, OVERDUE] }
+ *               priority: { type: string, enum: [LOW, MEDIUM, HIGH, URGENT] }
+ *     responses:
+ *       200:
+ *         description: Task updated
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Invalid CSRF token
+ *       404:
+ *         description: Task not found
+ */
+
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { validateCsrfToken } from '@/lib/csrf'

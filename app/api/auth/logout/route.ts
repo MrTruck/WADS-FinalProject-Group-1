@@ -1,3 +1,17 @@
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout and clear JWT cookie
+ *     tags: [Authentication]
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ *       401:
+ *         description: Unauthorized
+ */
+
 import { clearAuthCookies, getUserFromRequest } from '@/lib/auth'
 import { ok, unauthorized, serverError } from '@/lib/response'
 

@@ -1,3 +1,57 @@
+/**
+ * @swagger
+ * /api/v1/tasks:
+ *   get:
+ *     summary: Get all tasks for current user
+ *     tags: [Tasks]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [PENDING, IN_PROGRESS, COMPLETED, OVERDUE] }
+ *       - in: query
+ *         name: priority
+ *         schema: { type: string, enum: [LOW, MEDIUM, HIGH, URGENT] }
+ *       - in: query
+ *         name: category_id
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: List of tasks
+ *       401:
+ *         description: Unauthorized
+ *
+ *   post:
+ *     summary: Create a new task
+ *     tags: [Tasks]
+ *     security: [{ cookieAuth: [] }, { csrfToken: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title]
+ *             properties:
+ *               title: { type: string, example: "Study Prisma" }
+ *               description: { type: string }
+ *               priority: { type: string, enum: [LOW, MEDIUM, HIGH, URGENT], default: MEDIUM }
+ *               difficulty: { type: string, enum: [EASY, MEDIUM, HARD, VERY_HARD], default: MEDIUM }
+ *               due_date: { type: string, format: date-time }
+ *               estimated_hours: { type: number }
+ *               category_id: { type: string }
+ *     responses:
+ *       201:
+ *         description: Task created
+ *       400:
+ *         description: Validation error (e.g., missing title, payload too large)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Missing or invalid CSRF token
+ */
+
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { validateCsrfToken } from '@/lib/csrf'

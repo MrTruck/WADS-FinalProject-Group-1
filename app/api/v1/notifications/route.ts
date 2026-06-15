@@ -1,3 +1,21 @@
+/**
+ * @swagger
+ * /api/v1/notifications:
+ *   get:
+ *     summary: Get all notifications for current user
+ *     tags: [Notifications]
+ *     security: [{ cookieAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: unread
+ *         schema: { type: boolean }
+ *     responses:
+ *       200:
+ *         description: List of notifications
+ *       401:
+ *         description: Unauthorized
+ */
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { ok, unauthorized, serverError } from '@/lib/response'

@@ -1,3 +1,35 @@
+/**
+ * @swagger
+ * /api/v1/pomodoro/cycle:
+ *   post:
+ *     summary: Log a completed Pomodoro cycle
+ *     tags: [Pomodoro]
+ *     security: [{ cookieAuth: [] }, { csrfToken: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [start_time, cycle_number]
+ *             properties:
+ *               start_time: { type: string, format: date-time }
+ *               end_time: { type: string, format: date-time }
+ *               duration_mins: { type: integer }
+ *               is_completed: { type: boolean }
+ *               cycle_number: { type: integer }
+ *     responses:
+ *       201:
+ *         description: Cycle logged
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Invalid CSRF token
+ */
+
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { validateCsrfToken } from '@/lib/csrf'

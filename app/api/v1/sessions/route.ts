@@ -1,3 +1,32 @@
+/**
+ * @swagger
+ * /api/v1/sessions:
+ *   post:
+ *     summary: Start a new study session
+ *     tags: [Study Sessions]
+ *     security: [{ cookieAuth: [] }, { csrfToken: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [task_id, start_time]
+ *             properties:
+ *               task_id: { type: string }
+ *               start_time: { type: string, format: date-time }
+ *               session_type: { type: string, enum: [FOCUS, REVIEW, PRACTICE, READING] }
+ *     responses:
+ *       201:
+ *         description: Session created
+ *       400:
+ *         description: Validation error (e.g., missing task_id)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Invalid CSRF token
+ */
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { validateCsrfToken } from '@/lib/csrf'

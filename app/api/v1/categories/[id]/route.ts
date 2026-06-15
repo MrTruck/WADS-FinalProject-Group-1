@@ -1,3 +1,38 @@
+/**
+ * @swagger
+ * /api/v1/categories/{id}:
+ *   put:
+ *     summary: Update a category name or color
+ *     tags: [Categories]
+ *     security: [{ cookieAuth: [] }, { csrfToken: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               color: { type: string, pattern: '^#[0-9A-Fa-f]{6}$' }
+ *     responses:
+ *       200:
+ *         description: Category updated
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Invalid CSRF token
+ *       404:
+ *         description: Category not found
+ */
+
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { validateCsrfToken } from '@/lib/csrf'

@@ -1,9 +1,39 @@
+/**
+ * @swagger
+ * /api/v1/ai/schedule:
+ *   post:
+ *     summary: Generate AI study schedule
+ *     tags: [AI]
+ *     security:
+ *       - cookieAuth: []
+ *       - csrfToken: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [task_ids]
+ *             properties:
+ *               task_ids: { type: array, items: { type: string } }
+ *               days: { type: integer, default: 7 }
+ *     responses:
+ *       201: { description: Schedule created }
+ *       400: { description: Invalid input }
+ *       401: { description: Unauthorized }
+ *       403: { description: Invalid CSRF token }
+ *       429: { description: Rate limit exceeded }
+ *       503: { description: AI unavailable (fallback) }
+ *       504: { description: AI timeout }
+ */
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { validateCsrfToken } from '@/lib/csrf'
 import { aiScheduleSchema } from '@/lib/validators'
 import { created, badRequest, unauthorized, forbidden, serverError, serviceUnavailable, gatewayTimeout } from '@/lib/response'
 import { checkRateLimit, AI_RATE_LIMIT, getClientIp } from '@/lib/rateLimit'
+import { callLLM, type LLMMessage } from '@/lib/ai/groq'
+import { fetchUserAnalytics } from '@/lib/ai/analytics'
 
 const AI_TIMEOUT_MS = 10000
 
@@ -24,7 +54,6 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => null)
     if (!body) return badRequest('Request body is required')
-
     const result = aiScheduleSchema.safeParse(body)
     if (!result.success) return badRequest('Validation failed', result.error.flatten().fieldErrors)
 
@@ -33,59 +62,59 @@ export async function POST(request: Request) {
       select: { task_id: true, title: true, priority: true, difficulty: true, due_date: true, estimated_hours: true },
     })
 
-    const preferences = await prisma.user_preferences.findUnique({ where: { user_id: user.userId } })
-    const inputData = { tasks, preferences, user_preferences: result.data.preferences }
+    const analytics = await fetchUserAnalytics(user.userId)
+
+    const inputData = { tasks, analytics, preferences: result.data.preferences }
 
     let aiOutput: unknown = null
     let success = false
     let errorMsg: string | null = null
     let suggestions: unknown[] = []
 
-    if (process.env.AI_SERVICE_URL && process.env.AI_SERVICE_KEY) {
-      try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
-
-        const aiResponse = await fetch(`${process.env.AI_SERVICE_URL}/schedule`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.AI_SERVICE_KEY}` },
-          body: JSON.stringify(inputData),
-          signal: controller.signal,
-        }).finally(() => clearTimeout(timeout))
-
-        if (!aiResponse.ok) {
-          errorMsg = `AI service responded with ${aiResponse.status}`
-        } else {
-          aiOutput = await aiResponse.json()
-          success = true
-        }
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          await logAiRequest(user.userId, 'schedule', inputData, null, Date.now() - startTime, false, 'Timeout')
-          return gatewayTimeout()
-        }
-        errorMsg = err instanceof Error ? err.message : 'AI service error'
+    try {
+      const systemInstruction = `You are a study schedule optimizer. Output **only** valid JSON.`
+      const userPrompt = `
+Tasks: ${JSON.stringify(tasks)}
+User analytics: ${JSON.stringify(analytics)}
+Preferences: ${JSON.stringify(result.data.preferences)}
+Output JSON: { "suggestions": [{ "title": "string", "description": "string", "scheduled_at": "ISO datetime or null" }] }
+`
+      const messages: LLMMessage[] = [
+        { role: 'system', content: systemInstruction },
+        { role: 'user', content: userPrompt },
+      ]
+      const llmPromise = callLLM(messages, { temperature: 0.3, max_tokens: 2000 })
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), AI_TIMEOUT_MS))
+      const llmResponse = (await Promise.race([llmPromise, timeoutPromise])) as string
+      aiOutput = JSON.parse(llmResponse)
+      success = true
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Timeout') {
+        await logAiRequest(user.userId, 'schedule', inputData, null, Date.now() - startTime, false, 'Timeout')
+        return gatewayTimeout()
       }
-    } else {
+      errorMsg = err instanceof Error ? err.message : 'LLM error'
       aiOutput = buildScheduleFallback(tasks)
-      errorMsg = 'AI service not configured'
+      success = false
     }
 
     await logAiRequest(user.userId, 'schedule', inputData, aiOutput, Date.now() - startTime, success, errorMsg)
 
     if (!success && !aiOutput) return serviceUnavailable()
 
-    if (success && aiOutput) {
-      const payload = aiOutput as { suggestions?: Array<{ title: string; description: string; scheduled_at?: string }> }
-      if (Array.isArray(payload.suggestions)) {
-        suggestions = await Promise.all(
-          payload.suggestions.map((s) =>
-            prisma.ai_suggestion.create({
-              data: { user_id: user.userId, title: s.title, description: s.description, scheduled_at: s.scheduled_at ? new Date(s.scheduled_at) : null },
-            })
-          )
+    if (success && aiOutput && typeof aiOutput === 'object' && 'suggestions' in aiOutput && Array.isArray(aiOutput.suggestions)) {
+      suggestions = await Promise.all(
+        aiOutput.suggestions.map((s: any) =>
+          prisma.ai_suggestion.create({
+            data: {
+              user_id: user.userId,
+              title: s.title,
+              description: s.description,
+              scheduled_at: s.scheduled_at ? new Date(s.scheduled_at) : null,
+            },
+          })
         )
-      }
+      )
     }
 
     return created({ schedule: aiOutput, suggestions, ai_available: success, fallback_used: !success })

@@ -1,3 +1,17 @@
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags: [Authentication]
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: User data returned
+ *       401:
+ *         description: Unauthorized (no or expired token)
+ */
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { ok, unauthorized, notFound, serverError } from '@/lib/response'

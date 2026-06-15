@@ -1,3 +1,18 @@
+/**
+ * @swagger
+ * /api/v1/analytics/streak:
+ *   get:
+ *     summary: Get current study streak
+ *     tags: [Analytics]
+ *     security: [{ cookieAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: Streak information (current, longest, last study date)
+ *       401:
+ *         description: Unauthorized
+ */
+
+
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth'
 import { ok, unauthorized, serverError } from '@/lib/response'

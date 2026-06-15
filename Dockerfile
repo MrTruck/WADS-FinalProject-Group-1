@@ -20,6 +20,9 @@ RUN apk add --no-cache openssl libc6-compat
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ARG GROQ_API_KEY
+ENV GROQ_API_KEY=$GROQ_API_KEY
+
 RUN npx prisma generate
 RUN npm run build
 

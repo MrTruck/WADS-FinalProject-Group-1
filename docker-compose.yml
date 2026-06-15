@@ -1,19 +1,19 @@
+name: wads-final-project
+
 services:
-  web:
+  app:
+    image: ${DOCKER_USERNAME}/wads-final-project:latest
+
     build:
       context: .
       dockerfile: Dockerfile
 
-    image: nextjs-week10-app:local
-    container_name: nextjs-week10-container
-
-    ports:
-      - "3000:3000"
-
-    environment:
-      NODE_ENV: production
+    container_name: wads-final-project-container
 
     env_file:
-      - .env
+      - .env.production
+
+    ports:
+      - "3028:3000"
 
     restart: unless-stopped

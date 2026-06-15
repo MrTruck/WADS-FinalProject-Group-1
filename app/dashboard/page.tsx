@@ -104,11 +104,9 @@ async function recalculateBurnout() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-
       ...(csrfToken
         ? {
-            "x-csrf-token":
-              decodeURIComponent(csrfToken),
+            "x-csrf-token": decodeURIComponent(csrfToken),
           }
         : {}),
     },
@@ -116,17 +114,33 @@ async function recalculateBurnout() {
     body: JSON.stringify({}),
   });
 
-  const data = await response.json();
+  const rawResponse = await response.text();
+
+  let data: any = {};
+
+  try {
+    data = rawResponse ? JSON.parse(rawResponse) : {};
+  } catch {
+    data = {
+      message: rawResponse || "The server returned an invalid response",
+    };
+  }
 
   if (!response.ok) {
+    console.warn("Burnout API response:", {
+      status: response.status,
+      data,
+    });
+
     throw new Error(
       data.message ||
         data.error ||
-        "Burnout analysis failed"
+        data.details ||
+        `Burnout detection failed with HTTP ${response.status}`
     );
   }
 
-  return data;
+  return data.data ?? data;
 }
 async function runAIPrioritization() {
   const csrfToken = getCsrfToken();
@@ -514,7 +528,8 @@ function WeeklyView({ tasks, year, month, selectedDay, setSelectedDay, onTaskCli
       </div>
 
       {/* 7 day columns */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, alignItems: "start" }}>
+      <div className="weekly-grid-scroll">
+      <div className="weekly-grid">
         {weekDays.map((date) => {
           const isToday = isSameDay(date, today);
           const isSelected = selectedDay !== null &&
@@ -615,8 +630,9 @@ function WeeklyView({ tasks, year, month, selectedDay, setSelectedDay, onTaskCli
               </button>
             </div>
           );
-        })}
-      </div>
+                })}
+  </div>
+</div>
 
       {/* Selected day task detail below the grid */}
       {selectedDay !== null && (() => {
@@ -802,13 +818,13 @@ async function refreshBurnout() {
     return result;
   } catch (error: any) {
     console.error(
-      "Burnout recalculation failed:",
+      "Burnout detection failed:",
       error
     );
 
     setBurnoutError(
       error.message ||
-        "Burnout recalculation failed"
+        "Burnout detection failed"
     );
 
     return null;
@@ -942,9 +958,9 @@ function openNew(day) {
 
   return (
     <div style={styles.pageWrapper}>
-      <div style={styles.page}>
+      <div className="dashboard-page">
         {/* ── Page Header ── */}
-        <div style={styles.pageHeader}>
+        <div className="dashboard-header">
           <div>
             <h1 style={styles.pageTitle}>Dashboard</h1>
             <p style={styles.pageSubtitle}>
@@ -958,7 +974,7 @@ function openNew(day) {
 
         
 
-        <div style={styles.layout}>
+        <div className="dashboard-layout">
         {/* ── Left column: Calendar + Pomodoro ── */}
         <div style={styles.leftColumn}>
           {/* ── Calendar ── */}
@@ -1145,6 +1161,11 @@ function openNew(day) {
         {loading && <div style={styles.loadingBar}>Loading tasks…</div>}
         {fetchError && <div style={styles.errorBanner}>Failed to load tasks: {fetchError}</div>}
         {aiError && <div style={styles.errorBanner}>AI prioritization failed: {aiError}</div>}
+        {burnoutError && (
+          <div style={styles.errorBanner}>
+            Burnout detection failed: {burnoutError}
+          </div>
+        )}
 
         {modalTask !== null && (
           <TaskModal

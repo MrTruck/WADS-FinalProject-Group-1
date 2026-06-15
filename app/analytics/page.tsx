@@ -441,7 +441,22 @@ export default function AnalyticsPage() {
                 )}
               </div>
 
-              {burnoutError ? (
+              {totalTasks === 0 || !burnout ? (
+                <div>
+                  <h3 style={styles.listTitle}>
+                    No burnout analysis yet
+                  </h3>
+
+                  <p style={styles.emptyText}>
+                    Create a task to get started. Your burnout analysis
+                    will appear here after you create or update a task.
+                  </p>
+
+                  <Link href="/dashboard" style={styles.backLink}>
+                    Create your first task →
+                  </Link>
+                </div>
+              ) : burnoutError ? (
                 <p style={styles.errorMessage}>
                   {burnoutError}
                 </p>

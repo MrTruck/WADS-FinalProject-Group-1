@@ -122,25 +122,39 @@ export default function Sidebar() {
             {!collapsed && <span>Checking sign-in…</span>}
           </div>
         ) : user ? (
-          <div className="flex flex-col gap-3">
-            <div className="rounded-2xl bg-purple-50 p-3 text-sm text-purple-700">
-              <div className="font-semibold">Signed in</div>
-              {!collapsed && (
-                <>
-                  <div className="truncate">{user.name || user.email}</div>
-                  <div className="text-xs text-purple-600/80">{user.email}</div>
-                </>
-              )}
+            <div className="flex flex-col gap-3">
+              <div
+                className={`rounded-2xl bg-purple-50 text-sm text-purple-700 ${
+                  collapsed
+                    ? "flex items-center justify-center p-3"
+                    : "min-w-0 p-3"
+                }`}
+              >
+                {collapsed ? (
+                  <span className="text-xl" title="Signed in">
+                    👤
+                  </span>
+                ) : (
+                  <>
+                    <div className="font-semibold">Signed in</div>
+                    <div className="truncate">{user.name || user.email}</div>
+                    <div className="truncate text-xs text-purple-600/80">
+                      {user.email}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-2xl bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-200"
+                title={collapsed ? "Logout" : undefined}
+              >
+                {collapsed ? "↩" : "Logout"}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-2xl bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-200"
-            >
-              {!collapsed ? "Logout" : "↩"}
-            </button>
-          </div>
-        ) : (
+          ) : (
           <div className="flex flex-col gap-3 text-sm text-zinc-700">
             <div className="rounded-2xl bg-zinc-50 p-3">
               <div className="font-semibold">Not signed in</div>

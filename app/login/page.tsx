@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,7 +29,7 @@ export default function LoginPage() {
 
     setLoading(true)
     setError('')
-
+    setSuccess('')
     try {
       const endpoint = isLogin
         ? '/api/auth/login'
@@ -54,7 +55,19 @@ export default function LoginPage() {
     )
     }
 
-      router.push('/dashboard')
+      if (isLogin) {
+        router.push('/dashboard')
+        router.refresh()
+      } else {
+        setIsLogin(true)
+
+        setFormData((previous) => ({
+          ...previous,
+          password: '',
+        }))
+
+        setSuccess('Account created successfully. Please log in.')
+      }
     } catch (err) {
         console.error(err)
         setError(String(err))
@@ -156,7 +169,11 @@ export default function LoginPage() {
               className="w-full px-4 py-3 rounded-2xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
             />
           </div>
-
+          {success && (
+            <div className="bg-green-100 text-green-700 border border-green-200 p-3 rounded-2xl text-sm">
+              {success}
+            </div>
+          )}
           {error && (
             <div className="bg-red-100 text-red-600 border border-red-200 p-3 rounded-2xl text-sm">
               {error}

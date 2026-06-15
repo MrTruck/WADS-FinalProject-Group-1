@@ -64,7 +64,16 @@ export function useNotifications() {
         return;
       }
 
-      tasks.forEach((task) => {
+      const upcomingTasks = tasks.filter((task) => {
+        if (!task?.due_date) return false;
+        if (task.status === "COMPLETED") return false;
+        if (task.status === "OVERDUE") return false;
+
+        const due = Date.parse(task.due_date);
+        return due > now;
+      });
+
+      upcomingTasks.forEach((task) => {
         console.log(`[NOTIFICATION] Checking task: ${task.title}`, {
           due_date: task.due_date,
           status: task.status,

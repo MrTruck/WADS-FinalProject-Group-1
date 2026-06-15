@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  user_id               String                 @id @default(cuid())
+  email                 String                 @unique
+  name                  String
+  password              String
+  role                  role                   @default(USER)
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  ai_insights           ai_insight[]
+  ai_request_logs       ai_request_log[]
+  ai_suggestions        ai_suggestion[]
+  break_logs            break_log[]
+  burnout_metrics       burnout_metric[]
+  calendar_events       calendar_event[]
+  categories            category[]
+  notification_settings notification_settings?
+  notifications         notification[]
+  pomodoro_cycles       pomodoro_cycle[]
+  pomodoro_settings     pomodoro_settings?
+  productivity_logs     productivity_log[]
+  push_subscriptions    push_subscription[]
+  reschedule_prompts    reschedule_prompt[]
+  study_sessions        study_session[]
+  study_streak          study_streak?
+  tasks                 task[]
+  user_preferences      user_preferences?
+  weekly_summaries      weekly_summary[]
+
+  @@map("users")
+}
+
+model user_preferences {
+  user_preferences_id       String        @id @default(cuid())
+  user_id                   String        @unique
+  rest_days                 day_of_week[]
+  peak_productivity_windows String[]
+  hard_task_windows         String[]
+  easy_task_windows         String[]
+  available_start_time      String?
+  available_end_time        String?
+  custom_availability       Json?
+  max_weekly_study_hours    Int           @default(20)
+  max_daily_study_hours     Int           @default(6)
+  preferred_session_length  Int           @default(25)
+  break_reminder_enabled    Boolean       @default(true)
+  burnout_alert_threshold   Int           @default(70)
+  created_at                DateTime      @default(now())
+  updated_at                DateTime      @updatedAt
+  user                      user          @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model category {
+  name        String
+  color       String   @default("#6366f1")
+  user_id     String
+  category_id String   @id @default(cuid())
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  user        user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  tasks       task[]
+
+  @@unique([user_id, name])
+  @@map("categories")
+}
+
+model task {
+  title                           String
+  description                     String?
+  due_date                        DateTime?
+  user_id                         String
+  category_id                     String?
+  actual_hours                    Float?
+  completed_at                    DateTime?
+  created_at                      DateTime            @default(now())
+  difficulty                      difficulty          @default(MEDIUM)
+  estimated_hours                 Float?
+  task_id                         String              @id @default(cuid())
+  updated_at                      DateTime            @updatedAt
+  workload_score                  Float?
+  status                          task_status         @default(PENDING)
+  priority                        task_priority       @default(MEDIUM)
+  calendar_events                 calendar_event[]
+  reschedule_prompts              reschedule_prompt[]
+  study_sessions                  study_session[]
+  task_dependencies_as_depends_on task_dependency[]   @relation("DependsOnTasks")
+  task_dependencies_as_task       task_dependency[]   @relation("TaskDependencies")
+  category                        category?           @relation(fields: [category_id], references: [category_id])
+  user                            user                @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+model task_dependency {
+  task_dependency_id String   @id @default(cuid())
+  task_id            String
+  depends_on_id      String
+  created_at         DateTime @default(now())
+  depends_on         task     @relation("DependsOnTasks", fields: [depends_on_id], references: [task_id], onDelete: Cascade)
+  task               task     @relation("TaskDependencies", fields: [task_id], references: [task_id], onDelete: Cascade)
+
+  @@unique([task_id, depends_on_id])
+  @@map("task_dependencies")
+}
+
+model study_session {
+  study_session_id    String           @id @default(cuid())
+  user_id             String
+  task_id             String
+  subject             String
+  comprehension       Int
+  session_type        session_type     @default(FOCUS)
+  session_tags        String[]         @default([])
+  start_time          DateTime
+  end_time            DateTime?
+  duration_mins       Int?
+  break_minutes       Int?
+  focus_score         Int?
+  interruption_count  Int              @default(0)
+  interruption_reason String?
+  notes               String?
+  created_at          DateTime         @default(now())
+  updated_at          DateTime         @updatedAt
+  pomodoro_cycles     pomodoro_cycle[]
+  task                task             @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+  user                user             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("study_sessions")
+}
+
+model break_log {
+  break_log_id  String   @id @default(cuid())
+  user_id       String
+  start_time    DateTime
+  end_time      DateTime
+  duration_mins Int
+  reason        String
+  created_at    DateTime @default(now())
+  user          user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("break_logs")
+}
+
+model study_streak {
+  study_streak_id String   @id @default(cuid())
+  user_id         String   @unique
+  current_streak  Int      @default(0)
+  longest_streak  Int      @default(0)
+  last_study_date DateTime
+  updated_at      DateTime @updatedAt
+  user            user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("study_streaks")
+}
+
+model pomodoro_settings {
+  pomodoro_settings_id     String   @id @default(cuid())
+  user_id                  String   @unique
+  work_duration            Int      @default(25)
+  short_break              Int      @default(5)
+  long_break               Int      @default(15)
+  cycles_before_long_break Int      @default(4)
+  auto_start_breaks        Boolean  @default(false)
+  auto_start_pomodoros     Boolean  @default(false)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+  user                     user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("pomodoro_settings")
+}
+
+model pomodoro_cycle {
+  pomodoro_cycle_id String         @id @default(cuid())
+  user_id           String
+  study_session_id  String?
+  start_time        DateTime
+  end_time          DateTime?
+  duration_mins     Int?
+  is_completed      Boolean        @default(false)
+  cycle_number      Int
+  created_at        DateTime       @default(now())
+  study_session     study_session? @relation(fields: [study_session_id], references: [study_session_id])
+  user              user           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("pomodoro_cycles")
+}
+
+model notification_settings {
+  notification_settings_id String   @id @default(cuid())
+  user_id                  String   @unique
+  in_app_enabled           Boolean  @default(true)
+  email_enabled            Boolean  @default(true)
+  push_enabled             Boolean  @default(true)
+  reminder_before_minutes  Int      @default(24)
+  daily_digest             Boolean  @default(true)
+  weekly_report            Boolean  @default(true)
+  burnout_alerts           Boolean  @default(true)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+  user                     user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("notification_settings")
+}
+
+model notification {
+  notification_id      String             @id @default(cuid())
+  user_id              String
+  type                 notification_type
+  title                String
+  message              String
+  is_read              Boolean            @default(false)
+  read_at              DateTime?
+  push_subscription_id String?
+  created_at           DateTime           @default(now())
+  push_subscription    push_subscription? @relation(fields: [push_subscription_id], references: [push_subscription_id])
+  user                 user               @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model push_subscription {
+  push_subscription_id String         @id @default(cuid())
+  user_id              String
+  endpoint             String         @unique
+  auth_key             String
+  p256dh_key           String
+  user_agent           String?
+  is_active            Boolean        @default(true)
+  last_used_at         DateTime       @default(now())
+  created_at           DateTime       @default(now())
+  updated_at           DateTime       @updatedAt
+  notifications        notification[]
+  user                 user           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
+
+model calendar_event {
+  calendar_event_id String      @id @default(cuid())
+  user_id           String
+  task_id           String?
+  title             String
+  start_time        DateTime
+  end_time          DateTime
+  source            source_type @default(MANUAL)
+  is_ai_generated   Boolean     @default(false)
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+  task              task?       @relation(fields: [task_id], references: [task_id])
+  user              user        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("calendar_events")
+}
+
+model reschedule_prompt {
+  reschedule_prompt_id String   @id @default(cuid())
+  user_id              String
+  task_id              String
+  suggested_new_date   DateTime
+  reason               String
+  status               String   @default("PENDING")
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  task                 task     @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+  user                 user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("reschedule_prompts")
+}
+
+model burnout_metric {
+  burnout_metric_id String   @id @default(cuid())
+  user_id           String
+  date              DateTime
+  study_duration    Int?
+  session_count     Int?
+  break_count       Int?
+  overload_score    Int?
+  created_at        DateTime @default(now())
+  user              user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@map("burnout_metrics")
+}
+
+model productivity_log {
+  productivity_log_id String   @id @default(cuid())
+  user_id             String
+  date                DateTime
+  planned_minutes     Int?
+  planned_sessions    Int?
+  actual_minutes      Int?
+  tasks_completed     Int?
+  avg_focus_score     Float?
+  completion_rate     Float?
+  overload_score      Int?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  user                user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@map("productivity_logs")
+}
+
+model weekly_summary {
+  weekly_summary_id String      @id @default(cuid())
+  user_id           String
+  week_start        DateTime
+  total_study_mins  Int
+  tasks_completed   Int
+  avg_focus_score   Float
+  burnout_risk      Float?
+  ai_insight_id     String?
+  created_at        DateTime    @default(now())
+  ai_insight        ai_insight? @relation(fields: [ai_insight_id], references: [ai_insight_id])
+  user              user        @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@unique([user_id, week_start])
+  @@map("weekly_summaries")
+}
+
+model ai_insight {
+  ai_insight_id      String           @id @default(cuid())
+  user_id            String
+  burnout_risk_score Float?
+  burnout_risk_label String?
+  study_streak_days  Int?
+  weekly_hours       Float?
+  recommendations    String[]
+  raw_payload        Json?
+  generated_at       DateTime         @default(now())
+  created_at         DateTime         @default(now())
+  user               user             @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  weekly_summaries   weekly_summary[]
+
+  @@map("ai_insights")
+}
+
+model ai_suggestion {
+  ai_suggestion_id String            @id @default(cuid())
+  user_id          String
+  title            String
+  description      String
+  status           suggestion_status @default(ACTIVE)
+  accepted_at      DateTime?
+  dismissed_at     DateTime?
+  scheduled_at     DateTime?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  user             user              @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("ai_suggestions")
+}
+
+model ai_request_log {
+  ai_request_log_id String   @id @default(cuid())
+  user_id           String
+  feature           String
+  input_data        Json
+  output_data       Json
+  latency_ms        Int
+  success           Boolean
+  error_msg         String?
+  created_at        DateTime @default(now())
+  user              user     @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+
+  @@map("ai_request_logs")
+}
+
+enum role {
+  USER
+  ADMIN
+}
+
+enum task_status {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum task_priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum difficulty {
+  EASY
+  MEDIUM
+  HARD
+  VERY_HARD
+}
+
+enum session_type {
+  FOCUS
+  REVIEW
+  PRACTICE
+  READING
+  LECTURE
+  DISCUSSION
+  PLANNING
+  BREAK
+  ADMIN
+}
+
+enum notification_type {
+  DEADLINE_ALERT
+  AI_REMINDER
+  SYSTEM
+  STREAK_UPDATE
+  BURNOUT_ALERT
+  PUSH_TEST
+}
+
+enum suggestion_status {
+  ACTIVE
+  ACCEPTED
+  DISMISSED
+}
+
+enum source_type {
+  MANUAL
+  GOOGLE_CALENDAR
+  OUTLOOK
+}
+
+enum day_of_week {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}

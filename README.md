@@ -340,7 +340,7 @@ Contains reusable server-side utilities:
 
 ---
 
-### 6.2 API Documentation (unfinished)
+### 6.2 API Documentation
 
 #### Swagger Documentation
 
@@ -348,7 +348,6 @@ Contains reusable server-side utilities:
 
 * ** Swagger URL:** `https://e2526-wads-b4bc-07.csbihub.id/api-doc`
 * **Documentation Format:** OpenAPI / Swagger UI
-* **Authentication:** Bearer Token / Session-based Authentication (where applicable)
 
 
 

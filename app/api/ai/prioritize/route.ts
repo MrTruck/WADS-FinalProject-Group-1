@@ -28,7 +28,52 @@ function scoreToPriority(score: number): task_priority {
 
   return task_priority.LOW;
 }
+const AI_RATE_LIMIT = 30;
+const AI_RATE_WINDOW_MS = 60 * 1000;
 
+type RateLimitRecord = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitStore = new Map<string, RateLimitRecord>();
+
+function checkRateLimit(userId: string) {
+  const now = Date.now();
+  const existing = rateLimitStore.get(userId);
+
+  if (!existing || now >= existing.resetAt) {
+    rateLimitStore.set(userId, {
+      count: 1,
+      resetAt: now + AI_RATE_WINDOW_MS,
+    });
+
+    return {
+      allowed: true,
+      remaining: AI_RATE_LIMIT - 1,
+      retryAfterSeconds: 0,
+    };
+  }
+
+  if (existing.count >= AI_RATE_LIMIT) {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: Math.ceil(
+        (existing.resetAt - now) / 1000
+      ),
+    };
+  }
+
+  existing.count += 1;
+  rateLimitStore.set(userId, existing);
+
+  return {
+    allowed: true,
+    remaining: AI_RATE_LIMIT - existing.count,
+    retryAfterSeconds: 0,
+  };
+}
 export async function POST(req: Request) {
   try {
     const userId = req.headers.get("x-user-id");
@@ -44,6 +89,52 @@ export async function POST(req: Request) {
         }
       );
     }
+    const AI_RATE_LIMIT = 30;
+const AI_RATE_WINDOW_MS = 60 * 1000;
+
+type RateLimitRecord = {
+  count: number;
+  resetAt: number;
+};
+
+const rateLimitStore = new Map<string, RateLimitRecord>();
+
+function checkRateLimit(userId: string) {
+  const now = Date.now();
+  const existing = rateLimitStore.get(userId);
+
+  if (!existing || now >= existing.resetAt) {
+    rateLimitStore.set(userId, {
+      count: 1,
+      resetAt: now + AI_RATE_WINDOW_MS,
+    });
+
+    return {
+      allowed: true,
+      remaining: AI_RATE_LIMIT - 1,
+      retryAfterSeconds: 0,
+    };
+  }
+
+  if (existing.count >= AI_RATE_LIMIT) {
+      return {
+        allowed: false,
+        remaining: 0,
+        retryAfterSeconds: Math.ceil(
+          (existing.resetAt - now) / 1000
+        ),
+      };
+    }
+
+    existing.count += 1;
+    rateLimitStore.set(userId, existing);
+
+    return {
+      allowed: true,
+      remaining: AI_RATE_LIMIT - existing.count,
+      retryAfterSeconds: 0,
+    };
+  }
 
     const analytics =
       await fetchUserAnalytics(userId);

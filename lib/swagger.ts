@@ -236,33 +236,6 @@ export const getApiDocs = async () => {
             },
           },
 
-          // ─── Notifications ───────────────────────────────────────
-          Notification: {
-            type: "object",
-            properties: {
-              notification_id: { type: "string" },
-              user_id: { type: "string" },
-              type: { $ref: "#/components/schemas/NotificationType" },
-              title: { type: "string" },
-              message: { type: "string" },
-              is_read: { type: "boolean" },
-              read_at: { type: "string", format: "date-time", nullable: true },
-              created_at: { type: "string", format: "date-time" },
-            },
-          },
-          NotificationSettings: {
-            type: "object",
-            properties: {
-              in_app_enabled: { type: "boolean" },
-              email_enabled: { type: "boolean" },
-              push_enabled: { type: "boolean" },
-              reminder_before_minutes: { type: "integer" },
-              daily_digest: { type: "boolean" },
-              weekly_report: { type: "boolean" },
-              burnout_alerts: { type: "boolean" },
-            },
-          },
-
           // ─── Analytics ───────────────────────────────────────────
           ProgressResponse: {
             type: "object",
@@ -304,37 +277,132 @@ export const getApiDocs = async () => {
             },
           },
 
-          // ─── AI ──────────────────────────────────────────────────
-          AiInsight: {
+          // ─── AI BURNOUT──────────────────────────────────────────────────
+          BurnoutAnalysisResponse: {
             type: "object",
             properties: {
-              ai_insight_id: { type: "string" },
-              user_id: { type: "string" },
-              burnout_risk_score: { type: "number", nullable: true },
-              burnout_risk_label: { type: "string", nullable: true },
-              study_streak_days: { type: "integer", nullable: true },
-              weekly_hours: { type: "number", nullable: true },
+              burnoutRiskScore: {
+                type: "number",
+                example: 74,
+                description: "Calculated burnout risk score",
+              },
+              riskLevel: {
+                type: "string",
+                enum: ["LOW", "MEDIUM", "HIGH", "UNKNOWN"],
+                example: "HIGH",
+              },
+              reasons: {
+                type: "array",
+                items: {
+                  type: "string",
+                },
+                example: [
+                  "High number of overdue tasks",
+                  "Low task completion rate",
+                ],
+              },
               recommendations: {
                 type: "array",
-                items: { type: "string" },
+                items: {
+                  type: "string",
+                },
+                example: [
+                  "Prioritize urgent tasks first",
+                  "Break large tasks into smaller steps",
+                ],
               },
-              generated_at: { type: "string", format: "date-time" },
+              generatedAt: {
+                type: "string",
+                format: "date-time",
+                example: "2026-06-16T10:30:00.000Z",
+              },
             },
           },
-          AiSuggestion: {
-            type: "object",
-            properties: {
-              ai_suggestion_id: { type: "string" },
-              user_id: { type: "string" },
-              title: { type: "string" },
-              description: { type: "string" },
-              status: { $ref: "#/components/schemas/SuggestionStatus" },
-              accepted_at: { type: "string", format: "date-time", nullable: true },
-              dismissed_at: { type: "string", format: "date-time", nullable: true },
-              scheduled_at: { type: "string", format: "date-time", nullable: true },
-              created_at: { type: "string", format: "date-time" },
-            },
-          },
+
+BurnoutAnalysisNotFoundResponse: {
+  nullable: true,
+  description:
+    "Returns null when the user does not have a previously saved burnout analysis",
+  example: null,
+},
+
+// ─── AI Task Prioritization ───────────────────────────────────
+TaskRanking: {
+  type: "object",
+  required: ["task_id", "score", "assignedPriority"],
+  properties: {
+    task_id: {
+      type: "string",
+      description: "ID of the ranked task",
+      example: "cm123abc456",
+    },
+    score: {
+      type: "number",
+      description:
+        "AI priority score. The route supports either decimal scores from 0 to 1 or percentage scores from 0 to 100.",
+      example: 87,
+    },
+    reason: {
+      type: "string",
+      nullable: true,
+      description: "Optional explanation for the AI ranking",
+      example: "The task is difficult and has an approaching deadline.",
+    },
+    assignedPriority: {
+      type: "string",
+      enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
+      description: "Priority assigned from the AI score",
+      example: "URGENT",
+    },
+  },
+},
+
+PrioritizationResponse: {
+  type: "object",
+  required: ["success", "tasks", "rankings"],
+  properties: {
+    success: {
+      type: "boolean",
+      example: true,
+    },
+    tasks: {
+      type: "array",
+      description:
+        "All tasks belonging to the user after their priorities have been updated",
+      items: {
+        $ref: "#/components/schemas/Task",
+      },
+    },
+    rankings: {
+      type: "array",
+      description: "AI rankings and assigned priorities",
+      items: {
+        $ref: "#/components/schemas/TaskRanking",
+      },
+    },
+  },
+},
+
+PrioritizationErrorResponse: {
+  type: "object",
+  properties: {
+    success: {
+      type: "boolean",
+      example: false,
+    },
+    error: {
+      type: "string",
+      example: "AI prioritization failed",
+    },
+    message: {
+      type: "string",
+      example: "Unable to prioritize tasks",
+    },
+  },
+},
+
+
+
 
           // ─── Shared ──────────────────────────────────────────────
           SuccessResponse: {
@@ -806,89 +874,6 @@ export const getApiDocs = async () => {
           },
         },
 
-        // NOTIFICATIONS
-        "/notifications": {
-          get: {
-            tags: ["Notifications"],
-            summary: "Fetch all notifications",
-            security: [{ cookieAuth: [] }],
-            responses: {
-              200: {
-                description: "Array of notifications",
-                content: {
-                  "application/json": {
-                    schema: {
-                      type: "object",
-                      properties: {
-                        success: { type: "boolean" },
-                        data: {
-                          type: "object",
-                          properties: {
-                            notifications: { type: "array", items: { $ref: "#/components/schemas/Notification" } },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        "/notifications/{notificationId}/read": {
-          patch: {
-            tags: ["Notifications"],
-            summary: "Mark a notification as read",
-            security: [{ cookieAuth: [] }],
-            parameters: [
-              { in: "path", name: "notificationId", required: true, schema: { type: "string" } },
-            ],
-            responses: {
-              200: { description: "Notification marked as read", content: { "application/json": { schema: { $ref: "#/components/schemas/SuccessResponse" } } } },
-              404: { description: "Notification not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-            },
-          },
-        },
-        "/notifications/settings": {
-          get: {
-            tags: ["Notifications"],
-            summary: "Get notification preferences",
-            security: [{ cookieAuth: [] }],
-            responses: {
-              200: {
-                description: "Notification settings",
-                content: {
-                  "application/json": {
-                    schema: {
-                      type: "object",
-                      properties: {
-                        success: { type: "boolean" },
-                        data: { $ref: "#/components/schemas/NotificationSettings" },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          put: {
-            tags: ["Notifications"],
-            summary: "Update notification preferences",
-            security: [{ cookieAuth: [] }],
-            requestBody: {
-              required: true,
-              content: {
-                "application/json": {
-                  schema: { $ref: "#/components/schemas/NotificationSettings" },
-                },
-              },
-            },
-            responses: {
-              200: { description: "Settings updated", content: { "application/json": { schema: { $ref: "#/components/schemas/SuccessResponse" } } } },
-            },
-          },
-        },
-
         // ANALYTICS
         "/analytics/progress": {
           get: {
@@ -1003,142 +988,275 @@ export const getApiDocs = async () => {
         },
 
         // AI
-        "/ai/insights": {
-          get: {
-            tags: ["AI"],
-            summary: "Fetch AI-generated study insights",
-            security: [{ cookieAuth: [] }],
-            responses: {
-              200: {
-                description: "AI insights",
-                content: {
-                  "application/json": {
-                    schema: {
-                      type: "object",
-                      properties: {
-                        success: { type: "boolean" },
-                        data: { $ref: "#/components/schemas/AiInsight" },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        "/ai/suggestions": {
-          get: {
-            tags: ["AI"],
-            summary: "Fetch AI task suggestions",
-            security: [{ cookieAuth: [] }],
-            responses: {
-              200: {
-                description: "AI suggestions",
-                content: {
-                  "application/json": {
-                    schema: {
-                      type: "object",
-                      properties: {
-                        success: { type: "boolean" },
-                        data: {
-                          type: "object",
-                          properties: {
-                            suggestions: { type: "array", items: { $ref: "#/components/schemas/AiSuggestion" } },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-        "/ai/suggestions/{suggestionId}/accept": {
-          post: {
-            tags: ["AI"],
-            summary: "Accept an AI suggestion",
-            security: [{ cookieAuth: [] }],
-            parameters: [
-              { in: "path", name: "suggestionId", required: true, schema: { type: "string" } },
-            ],
-            responses: {
-              200: { description: "Suggestion accepted", content: { "application/json": { schema: { $ref: "#/components/schemas/SuccessResponse" } } } },
-              404: { description: "Suggestion not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-            },
-          },
-        },
-        "/ai/suggestions/{suggestionId}/dismiss": {
-          post: {
-            tags: ["AI"],
-            summary: "Dismiss an AI suggestion",
-            security: [{ cookieAuth: [] }],
-            parameters: [
-              { in: "path", name: "suggestionId", required: true, schema: { type: "string" } },
-            ],
-            responses: {
-              200: { description: "Suggestion dismissed", content: { "application/json": { schema: { $ref: "#/components/schemas/SuccessResponse" } } } },
-              404: { description: "Suggestion not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-            },
-          },
-        },
 
-        // ADMIN
-        "/admin/users": {
-          get: {
-            tags: ["Admin"],
-            summary: "List all users (admin only)",
-            security: [{ cookieAuth: [] }],
-            responses: {
-              200: {
-                description: "Array of users",
-                content: {
-                  "application/json": {
-                    schema: {
-                      type: "object",
-                      properties: {
-                        success: { type: "boolean" },
-                        data: {
-                          type: "object",
-                          properties: {
-                            users: { type: "array", items: { $ref: "#/components/schemas/User" } },
-                          },
-                        },
-                      },
-                    },
-                  },
+// AI TASK PRIORITIZATION
+"/ai/prioritize": {
+  servers: [
+    {
+      url: "http://localhost:3000/api",
+      description: "Development AI API server",
+    },
+  ],
+
+  post: {
+    security: [],
+    tags: ["AI"],
+    summary: "Prioritize all tasks using AI",
+    description:
+      "Analyzes the authenticated user's workload, generates AI priority scores, converts each score into LOW, MEDIUM, HIGH, or URGENT, updates the matching tasks in the database, and returns the updated tasks and rankings.",
+    parameters: [
+      {
+        in: "header",
+        name: "x-user-id",
+        required: true,
+        schema: {
+          type: "string",
+        },
+        description: "ID of the user whose tasks will be prioritized",
+      },
+    ],
+    responses: {
+      200: {
+        description: "Tasks prioritized and updated successfully",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/PrioritizationResponse",
+            },
+            example: {
+              success: true,
+              tasks: [
+                {
+                  task_id: "cm123abc456",
+                  title: "Complete project report",
+                  description: "Finish and submit the final report",
+                  status: "PENDING",
+                  priority: "URGENT",
+                  difficulty: "HARD",
+                  due_date: "2026-06-18T12:00:00.000Z",
+                  user_id: "user123",
                 },
-              },
-              403: { description: "Forbidden — admin only", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+              ],
+              rankings: [
+                {
+                  task_id: "cm123abc456",
+                  score: 87,
+                  reason:
+                    "The task is difficult and has an approaching deadline.",
+                  assignedPriority: "URGENT",
+                },
+              ],
             },
           },
         },
-        "/admin/users/{userId}": {
-          delete: {
-            tags: ["Admin"],
-            summary: "Delete a user (admin only)",
-            security: [{ cookieAuth: [] }],
-            parameters: [
-              { in: "path", name: "userId", required: true, schema: { type: "string" } },
-            ],
-            responses: {
-              204: { description: "User deleted" },
-              403: { description: "Forbidden", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
-              404: { description: "User not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+      },
+
+      401: {
+        description: "The x-user-id header is missing",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/PrioritizationErrorResponse",
+            },
+            example: {
+              success: false,
+              error: "Missing user id",
             },
           },
         },
-        "/admin/analytics": {
-          get: {
-            tags: ["Admin"],
-            summary: "Get system-wide analytics (admin only)",
-            security: [{ cookieAuth: [] }],
-            responses: {
-              200: { description: "System analytics", content: { "application/json": { schema: { $ref: "#/components/schemas/SuccessResponse" } } } },
-              403: { description: "Forbidden", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+      },
+
+      429: {
+        description: "The external AI service rate limit has been reached",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/PrioritizationErrorResponse",
+            },
+            example: {
+              success: false,
+              error: "AI rate limit reached",
+              message:
+                "The AI token limit has been reached. Your task was saved, but its urgency could not be recalculated.",
             },
           },
         },
+      },
+
+      500: {
+        description:
+          "Analytics calculation, AI prioritization, or database update failed",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/PrioritizationErrorResponse",
+            },
+            example: {
+              success: false,
+              error: "AI prioritization failed",
+              message: "Prioritization service unavailable",
+            },
+          },
+        },
+      },
+    },
+  },
+},
+
+
+        
+// AI BURNOUT ANALYSIS
+"/ai/burnout": {
+  servers: [
+    {
+      url: "http://localhost:3000/api",
+      description: "Development AI API server",
+    },
+  ],
+
+  get: {
+    security: [],
+    tags: ["AI"],
+    summary: "Get the most recently saved burnout analysis",
+    description:
+      "Returns the user's latest saved burnout analysis without calling the AI service.",
+    parameters: [
+      {
+        in: "header",
+        name: "x-user-id",
+        required: true,
+        schema: {
+          type: "string",
+        },
+        description: "ID of the user whose burnout analysis is requested",
+      },
+    ],
+    responses: {
+      200: {
+        description:
+          "The latest saved burnout analysis, or null if no analysis has been generated",
+        content: {
+          "application/json": {
+            schema: {
+              oneOf: [
+                {
+                  $ref: "#/components/schemas/BurnoutAnalysisResponse",
+                },
+                {
+                  $ref: "#/components/schemas/BurnoutAnalysisNotFoundResponse",
+                },
+              ],
+            },
+          },
+        },
+      },
+      401: {
+        description: "The x-user-id header is missing",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ErrorResponse",
+            },
+            example: {
+              error: "Missing user id",
+            },
+          },
+        },
+      },
+      500: {
+        description: "Failed to load the saved burnout analysis",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ErrorResponse",
+            },
+            example: {
+              error: "Failed to load burnout analysis",
+              details: "Error details",
+            },
+          },
+        },
+      },
+    },
+  },
+
+  post: {
+    security: [], 
+    tags: ["AI"],
+    summary: "Generate and save a new burnout analysis",
+    description:
+      "Calculates user analytics, calls the burnout detection AI, saves the result, and returns the newly generated analysis. This endpoint should be called after a task is created, updated, completed, or deleted.",
+    parameters: [
+      {
+        in: "header",
+        name: "x-user-id",
+        required: true,
+        schema: {
+          type: "string",
+        },
+        description: "ID of the user whose burnout analysis will be generated",
+      },
+    ],
+    responses: {
+      200: {
+        description: "Burnout analysis generated and saved successfully",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/BurnoutAnalysisResponse",
+            },
+            example: {
+              burnoutRiskScore: 74,
+              riskLevel: "HIGH",
+              reasons: [
+                "High number of active pending tasks",
+                "High number of overdue tasks",
+                "Low completion rate",
+              ],
+              recommendations: [
+                "Prioritize urgent and difficult tasks",
+                "Break large tasks into smaller steps",
+                "Create a manageable study schedule",
+              ],
+              generatedAt: "2026-06-16T10:30:00.000Z",
+            },
+          },
+        },
+      },
+      401: {
+        description: "The x-user-id header is missing",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ErrorResponse",
+            },
+            example: {
+              error: "Missing user id",
+            },
+          },
+        },
+      },
+      500: {
+        description:
+          "The analytics calculation, AI generation, or database operation failed",
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/ErrorResponse",
+            },
+            example: {
+              error: "Burnout analysis failed",
+              details: "Error details",
+            },
+          },
+        },
+      },
+    },
+  },
+},
+
+
+
       },
 
       security: [{ cookieAuth: [] }],

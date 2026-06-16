@@ -759,11 +759,100 @@ erDiagram
 • Dockerfile included - yes
 • docker-compose.yml included - yes
 
-### 11.2 Production Environment (unfinished)
-Explain: 
-• Environment variables 
-• Secrets handling 
-• HTTPS configuration 
+### 11.2 Production Environment 
+
+#### Environment Variables
+
+Environment variables are used to store configuration values needed by the application.
+
+The production environment uses:
+
+* `JWT_SECRET`: signs access tokens
+* `JWT_REFRESH_SECRET`: signs refresh tokens
+* `JWT_EXPIRES_IN`: sets the access token lifetime
+* `JWT_REFRESH_EXPIRES_IN`: sets the refresh token lifetime
+* `CSRF_SECRET`: supports CSRF protection
+* `CRON_SECRET`: protects scheduled server operations
+* `NODE_ENV`: enables production mode
+* `GROQ_API_KEY`: connects the application to Groq AI
+* `DATABASE_URL`: connects Prisma to the production database
+
+Docker Compose loads the production environment file into the container:
+
+```yaml
+env_file:
+  - .env.production
+```
+
+#### Secrets Handling
+
+Sensitive values are stored in GitHub repository secrets instead of being written directly in the source code.
+
+The secrets are stored under:
+
+```text
+Repository Settings
+-> Secrets and variables
+-> Actions
+```
+
+Examples include:
+
+```text
+JWT_SECRET
+JWT_REFRESH_SECRET
+CSRF_SECRET
+CRON_SECRET
+GROQ_API_KEY
+DATABASE_URL
+DOCKER_USERNAME
+DOCKER_PASSWORD
+```
+
+The GitHub Actions workflow reads the secrets during deployment:
+
+```yaml
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+DATABASE_URL=${{ secrets.DATABASE_URL }}
+GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+```
+
+The workflow creates `.env.production` on the remote server. The actual secret values are not committed to GitHub.
+
+Environment files are ignored using `.gitignore`:
+
+```gitignore
+.env
+.env.*
+!.env.example
+```
+
+#### HTTPS Configuration
+
+
+The production website uses HTTPS:
+
+https://e2526-wads-b4bc-07.csbihub.id
+
+HTTPS is handled by Cloudflare. Cloudflare provides the SSL certificate and forwards requests to the Next.js application running inside Docker.
+
+Docker forwards server port 3028 to port 3000 inside the container:
+
+ports:
+  - "3028:3000"
+
+The request flow is:
+
+1. Browser
+2. HTTPS through Cloudflare
+3. Remote server port 3028
+4. Docker container port 3000
+5. Next.js application
+
+
+The middleware also adds security headers, including Strict-Transport-Security, to encourage browsers to keep using HTTPS.
+
+Authentication cookies such as wr_access and wr_refresh are marked as Secure and HttpOnly, so they are only sent over HTTPS and cannot be accessed by client-side JavaScript.
 
 ### 11.3 Live Application URL 
 https://e2526-wads-b4bc-07.csbihub.id
@@ -815,11 +904,26 @@ https://e2526-wads-b4bc-07.csbihub.id
 - AI testing for burnout and prioritize endpoints  
 ### 12.2 Student Name: Immanuel Sheva G Simanjuntak
 Features implemented: 
-API endpoints handled: 
+* Developed the main dashboard user interface, including task display, calendar views, upcoming tasks, and task management components. 
+* Developed the frontend login and registration pages and connected them to the authentication API.
+* Deployed the application to the production server.
+
+API endpoints handled:
+* Worked on app/api/ai/burnout/route.ts for generating burnout risk analysis based on user task and productivity data. 
+* Worked on app/api/ai/prioritize/route.ts for calculating task urgency and updating task priority values in the database.
+
 Tests written: 
+* AI testing for the burnout-insight retrieval and task-prioritization endpoints, covering valid and missing user IDs, users with no saved insights or tasks, successful response consistency, rate limiting, and AI service unavailability: **AI-07 to AI-14**.
+
 Security work: 
-AI-related work: 
-Contributions must match GitHub commit history.
+* Integrated the login and registration frontend with the existing authentication system.
+* Tested protected API endpoints using authentication cookies and CSRF tokens.
+
+AI-related work:
+* Configured the Groq API key through environment variables.
+* Integrated the Groq API with the burnout-analysis and task-prioritization features.
+* Implemented API routes that collect user analytics, send the relevant data to the AI model, process the AI response, and return or store the results.
+* Added error handling for AI request failures and Groq API rate-limit errors.
 ### 12.3 Student Name: Patrick William Prabowo
 Features implemented: 
 * Built the notifications workflow, including alert generation, user notification settings, and client-side popup behavior.
@@ -841,6 +945,7 @@ Tests written:
 * __tests__\LoginPage.test.tsx
 * __tests__\DashboardPage.test.tsx
 
+
 Security work:
 * Reviewed and reinforced notification and Pomodoro-related request validation
 * Ensured secure handling of auth tokens/cookies for user settings and timer actions
@@ -859,9 +964,11 @@ AI tools used:
 The afformentioned AI tools were used for resolving merging conflicts, generating additional testing scenarios, converting report to markdown file, fixing front end bugs, aswell as helping us with understanding each other's code.
 
 ## 14. Known Limitations & Future Improvements 
- Current limitations:
- Possible future enhancements:
- AI limitations and risks:
+ Current limitations: Notifications only appear inside the website, AI features are heuristic-based and may generate schedule recommendations that do not perfectly match every user’s habits, offline features are limited.
+ 
+ Possible future enhancements: Improve AI recommendations by integrating stronger context-aware models or external ML services, add offline-first support with local caching and sync reconciliation for tasks, sessions, and notifications, expand calendar integrations with external services like Google Calendar and Microsoft Outlook which would also provide better notifications. 
+
+AI limitations and risks: AI-generated guidance is advisory only and should not replace human judgement for study planning or mental health decisions, incorrect or overly optimistic recommendations could lead to missed deadlines if users rely on AI output without review, and there is a risk of bias in workload assessments when task metadata is incomplete or subjective.
 
 ## 15. Final Declaration 
 We declare that: 
@@ -870,8 +977,141 @@ We declare that:
 • All group members understand the system 
 
 Signed by Group Members: 
-• 
-• 
-• 
+• Hanina Elias Abdosh
+• Imanuel Sheva G Simanjuntak
+• Patrick William Prabowo
 ## 16. SETUP 
+
 ## 17. DEPLOYMENT INSTRUCTIONS 
+
+The application is deployed automatically using GitHub Actions, Docker Hub, Docker Compose, and a self-hosted runner on the remote CSBI server.
+
+#### Initial Deployment Requirements
+
+Before deployment, make sure the following files exist in the repository:
+
+* `Dockerfile`
+* `docker-compose.yml`
+* `.dockerignore`
+* `.github/workflows/cicd.yml`
+
+The GitHub repository must also contain the required production secrets under:
+
+* **Settings**
+* **Secrets and variables**
+* **Actions**
+
+Required secrets include:
+
+* `DOCKER_USERNAME`
+* `DOCKER_PASSWORD`
+* `DATABASE_URL`
+* `JWT_SECRET`
+* `JWT_REFRESH_SECRET`
+* `JWT_EXPIRES_IN`
+* `JWT_REFRESH_EXPIRES_IN`
+* `CSRF_SECRET`
+* `CRON_SECRET`
+* `GROQ_API_KEY`
+* `NODE_ENV`
+
+`DOCKER_PASSWORD` should contain a Docker Hub personal access token instead of the regular Docker Hub password.
+
+#### Deployment Process
+
+The deployment process is triggered whenever changes are pushed to the `main` branch.
+
+The workflow performs the following steps:
+
+1. GitHub Actions checks out the latest source code.
+2. A Docker image is built from the `Dockerfile`.
+3. The Docker image is pushed to Docker Hub.
+4. The self-hosted runner on the remote server receives the deployment job.
+5. The production environment variables are loaded from GitHub repository secrets.
+6. Docker Compose pulls the latest image.
+7. The previous container is replaced with the updated container.
+8. The Next.js application starts inside Docker.
+
+#### Updating the Live Website
+
+Make the required code changes locally and test the project:
+
+```bash
+npm run build
+```
+
+If the build succeeds, commit and push the changes:
+
+```bash
+git add .
+git commit -m "Describe the changes"
+git pull --rebase origin main
+git push origin main
+```
+
+Pushing to `main` automatically starts the GitHub Actions deployment workflow.
+
+#### Checking the Deployment
+
+Open the GitHub repository and go to:
+
+* Actions
+* WADS CI/CD
+* Open the latest workflow run
+
+The deployment is successful when both jobs show green check marks:
+
+```text
+build 
+deploy 
+```
+
+If a job fails, open the failed step to view the error log.
+
+#### Accessing the Production Website
+
+After the deployment succeeds, the website is available at:
+
+```text
+https://e2526-wads-b4bc-07.csbihub.id
+```
+
+If the browser still displays an older version, perform a hard refresh:
+
+```text
+Ctrl + Shift + R
+```
+
+#### Docker Port Configuration
+
+The Docker Compose configuration forwards remote server port `3028` to port `3000` inside the Next.js container:
+
+```yaml
+ports:
+  - "3028:3000"
+```
+
+The request flow is:
+
+1. The user opens the website in a browser.
+2. Cloudflare receives the request through HTTPS.
+3. Cloudflare forwards the request to port `3028` on the remote server.
+4. Docker forwards port `3028` to port `3000` inside the container.
+5. The Next.js application processes the request.
+
+#### Future Updates
+
+After the initial setup, the remote terminal is not required for normal updates.
+
+Future updates only require:
+
+```bash
+git add .
+git commit -m "Update application"
+git pull --rebase origin main
+git push origin main
+```
+
+The CI/CD workflow will automatically rebuild and redeploy the application.
+
+

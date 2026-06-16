@@ -1,0 +1,2217 @@
+{
+  "info": {
+    "_postman_id": "73586d96-a4a0-4bde-a992-ade50aadd796",
+    "name": "Workload Reminder API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "53153862",
+    "_collection_link": "https://go.postman.co/collection/53153862-73586d96-a4a0-4bde-a992-ade50aadd796?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "TC-01: Register- valid input",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"duplicate@example.com\",\r\n  \"password\": \"Test1234\",\r\n  \"name\": \"First\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-02: Register- missing required field (password)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"missing@example.com\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-03: Register – invalid data type (email as number)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": 12345, \"password\": \"Test1234\", \"name\": \"Invalid\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-04: Login – valid credentials",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"xss@example.com\", \"password\": \"Test1234\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑05: Login – invalid password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"test@example.com\", \"password\": \"wrong\" }"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑06: Login – non‑existent user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"nobody@example.com\", \"password\": \"Test1234\" }"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑07: Access protected route without login",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑08: Access protected route with valid token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑09: Role‑based access – regular user tries admin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/users",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑10: Role‑based access – admin accesses admin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/users",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "TC-11: Creating a valid task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1781587104896.2ec1c51647e13d8bf645be151c22344bd02cb8a1d42e82031e63162c0753a53c",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Task 1\",\r\n    \"priority\": \"HIGH\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑12: Create task – missing required field (title)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"priority\": \"HIGH\" }"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑13: Create task – invalid data type (priority as number)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Test\", \"priority\": 123 }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑14: Get single task – valid ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/cmohgkuop00076pq9tiqcnlz2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "cmohgkuop00076pq9tiqcnlz2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑15: Get single task – non‑existent ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/fake-id-123",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "fake-id-123"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑16: Update task – valid input",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"Updated Title\", \"status\": \"COMPLETED\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/cmohgkuop00076pq9tiqcnlz2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "cmohgkuop00076pq9tiqcnlz2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑17: Update task – invalid input (empty title)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/cmohgkuop00076pq9tiqcnlz2?x-csrf-token=1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "cmohgkuop00076pq9tiqcnlz2"
+              ],
+              "query": [
+                {
+                  "key": "x-csrf-token",
+                  "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑18: Delete task – valid ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/cmohgkuop00076pq9tiqcnlz2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "cmohgkuop00076pq9tiqcnlz2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑19: Delete task – non‑existent ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/cmohgkuop00076pq9tiqcnlz2?x-csrf-token=1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "cmohgkuop00076pq9tiqcnlz2"
+              ],
+              "query": [
+                {
+                  "key": "x-csrf-token",
+                  "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑20: Listing all tasks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Input Validation & Security",
+      "item": [
+        {
+          "name": "TC‑21: Empty input fields – registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"email\": \"\", \"password\": \"\", \"name\": \"\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000//api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑22: Maximum length input (title = 255 chars)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777313371919.733a9c7d375c25895db6733ce2e3171929cf8be3324fda7bf4cbda73d68fb5d4",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\r\n  \"priority\": \"MEDIUM\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑23: Maximum length input (title > 255 chars)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777313371919.733a9c7d375c25895db6733ce2e3171929cf8be3324fda7bf4cbda73d68fb5d4",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\r\n  \"priority\": \"MEDIUM\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑24: Minimum length input (title 1 char)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777313371919.733a9c7d375c25895db6733ce2e3171929cf8be3324fda7bf4cbda73d68fb5d4",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"t\",\r\n  \"priority\": \"MEDIUM\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑25: Special characters input",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777313371919.733a9c7d375c25895db6733ce2e3171929cf8be3324fda7bf4cbda73d68fb5d4",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"!@#$%^&*()_+{}[]|\\\\:;\\\"'<>,.?/~`\",\r\n  \"priority\": \"MEDIUM\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑26: SQL injection attempt – in email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777308893532.a9fa7bb31d8c71e6cd8d94770d679c877862e4285e96933e9b39289ef4687e1e",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"' OR '1'='1\",\r\n  \"password\": \"Test1234\",\r\n  \"name\": \"Hacker\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000//api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑27: XSS input in name",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777315496150.e43573c2cbe5cb8afc993963451d97f98ebfe398114bd2278349f616853e05e2",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"xss@example.com\",\r\n  \"password\": \"Test1234\",\r\n  \"name\": \"<script>alert('XSS')</script>\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000//api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑28: XSS input in task title",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777315496150.e43573c2cbe5cb8afc993963451d97f98ebfe398114bd2278349f616853e05e2",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000//api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑29: Invalid email format",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777315496150.e43573c2cbe5cb8afc993963451d97f98ebfe398114bd2278349f616853e05e2",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"notanemail\",\r\n  \"password\": \"Test1234\",\r\n  \"name\": \"Test\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000//api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑30: Invalid number format (estimated_hours = negative)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777318024114.5c8e46f7ba40853aa601e58d543d72b6fc3d33bdaf9fa95e01c805d7d464f4de",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Negative hours test\",\r\n  \"priority\": \"MEDIUM\",\r\n  \"estimated_hours\": -5\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000//api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑31: Duplicate data entry – duplicate email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"duplicate@example.com\",\r\n  \"password\": \"Test1234\",\r\n  \"name\": \"First\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authorization & Edge Cases",
+      "item": [
+        {
+          "name": "TC‑32: Access protected route without CSRF token (edge case)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"title\": \"No CSRF\", \"priority\": \"MEDIUM\" }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000//api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "",
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-33:  Expired token access",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777315496150.e43573c2cbe5cb8afc993963451d97f98ebfe398114bd2278349f616853e05e2",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑34: Logout functionality",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777342340804.e6e214214e050668cb74cb900d7dd350ec258617144fde6ae6c9985885f7c761",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑35: Session timeout (simulate by clearing cookie)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/auth/me",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑36: Correct HTTP status codes – invalid endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/this-does-not-exist",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "this-does-not-exist"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑37: Incorrect HTTP method",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777342660328.19ca2ad6131136e4b7bc4d2459b3d3d5dfc17c9c18567e3a2a44b60e4d3e2bd3",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC‑38: Concurrent requests handling – send 10 requests at once",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777342660328.19ca2ad6131136e4b7bc4d2459b3d3d5dfc17c9c18567e3a2a44b60e4d3e2bd3",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/tasks",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-39: Password change",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "TC-40: Create valid category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"School\",\r\n  \"color\": \"#ff0000\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/categories",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-41: Invalid duplicate category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"School\",\r\n  \"color\": \"#ff0000\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/categories",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-42: Get all categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/categories",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "categories"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-43: Update category name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"University\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/categories/cmoi0mri500011j5dfosijynl",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "cmoi0mri500011j5dfosijynl"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-44: Delete category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/categories/cmoi0mri500011j5dfosijynl",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "categories",
+                "cmoi0mri500011j5dfosijynl"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Study Sessions",
+      "item": [
+        {
+          "name": "TC-45: Create valid study session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777345227242.0c791e702852ad91ab0a51ae2299b43566a3693fad98de31d5847843ee94fe5b",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"task_id\": \"cmoi1hl2y00031j5dodakegqs\",\r\n  \"start_time\": \"2026-04-28T10:00:00Z\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/sessions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-46: Create invalid study session (missing task ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"task_id\": \"cmoi1hs\",\r\n  \"start_time\": \"2026-04-28T10:00:00Z\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/sessions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-47: Get all study sessions for a task",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777343817314.ad0bf25a3216a869f6d943aa67c08bf4fdfb921cb34c5dc07c156b39ebb1c4c5",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/sessions",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pomodoro",
+      "item": [
+        {
+          "name": "TC-48: Get Pomodoro settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/pomodoro/settings",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "pomodoro",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-49: Update pomodoro settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777346053974.e939a3956654a5d3fd62193313ee2afdc6647856a58faffad871bb22b9667196",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"work_duration\": 30,\r\n  \"short_break\": 10\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/pomodoro/settings",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "pomodoro",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-50: Log a cycle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777346053974.e939a3956654a5d3fd62193313ee2afdc6647856a58faffad871bb22b9667196",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"start_time\": \"2026-04-28T10:00:00Z\",\r\n  \"end_time\": \"2026-04-28T10:25:00Z\",\r\n  \"duration_mins\": 25,\r\n  \"cycle_number\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/pomodoro/cycle",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "pomodoro",
+                "cycle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-51: Get all cycles",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777346053974.e939a3956654a5d3fd62193313ee2afdc6647856a58faffad871bb22b9667196",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"start_time\": \"2026-04-28T10:00:00Z\",\r\n  \"end_time\": \"2026-04-28T10:25:00Z\",\r\n  \"duration_mins\": 25,\r\n  \"cycle_number\": 1\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/pomodoro/cycles",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "pomodoro",
+                "cycles"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "TC-52: Get notification settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/notifications/settings",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-53: Update notification settings",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777346053974.e939a3956654a5d3fd62193313ee2afdc6647856a58faffad871bb22b9667196",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email_notifications\": false,\r\n  \"push_notifications\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/notifications/settings",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "settings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-54: Get all notifications",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777346053974.e939a3956654a5d3fd62193313ee2afdc6647856a58faffad871bb22b9667196",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email_notifications\": false,\r\n  \"push_notifications\": true\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/v1/notifications",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "notifications"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-55: Mark notification as read",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "TC-56: Get progress status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777347905752.e7012c0d0cd87315eb47a8c0ee2033c39997d821cf3c7a9af6312714762e34dc",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/analytics/progress",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "progress"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-57: Get productivity trends",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/analytics/productivity?days=7",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "productivity"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "7"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-58: Get workload density",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/analytics/workload?days=14",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "workload"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "14"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-59: Get completion rates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/analytics/completion?days=30",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "completion"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-60: Get study streak",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/analytics/streak",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "streak"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "TC-65: Login in as admin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"admin@example.com\",\r\n  \"password\": \"Test1234\"\r\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-66: Get all users- admin only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/users",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-67: Delete a user – admin only",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1777351763609.471dfa349da24d1039a86828d76f65f4449b2c8b509d8b5dbb1aaae834b68691",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/users/cmohlbz8f000fa43gzbg39t6d",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "users",
+                "cmohlbz8f000fa43gzbg39t6d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC-68: Get system analytics – admin only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/v1/admin/analytics",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "analytics"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Features",
+      "item": [
+        {
+          "name": "AI‑01: Valid request with existing tasks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "11781587104896.2ec1c51647e13d8bf645be151c22344bd02cb8a1d42e82031e63162c0753a53c",
+                "type": "text"
+              },
+              {
+                "key": "x-user-id",
+                "value": "cmohjdd6k0008a43gdc2n6a75",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑02: Valid request with only one task",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1781580353629.b4a3b59a41dc936b7e7efe181858de9f0092d8264380159de47582ed03453ec2",
+                "type": "text"
+              },
+              {
+                "key": "x-user-id",
+                "value": "cmohjdd6k0008a43gdc2n6a75",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"task_ids\": [\"cmqg399xa00037n6jyzq30z3c\"],\r\n  \"days_back\": 14\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑03: Missing user_ids (invalid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1781580353629.b4a3b59a41dc936b7e7efe181858de9f0092d8264380159de47582ed03453ec2",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑04: invalid days_back",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1781580353629.b4a3b59a41dc936b7e7efe181858de9f0092d8264380159de47582ed03453ec2",
+                "type": "text"
+              },
+              {
+                "key": "x-user-id",
+                "value": "cmohjdd6k0008a43gdc2n6a75",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"days_back\": \"abc\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑05: AI unavailable",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑06: consistency test",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1781580353629.b4a3b59a41dc936b7e7efe181858de9f0092d8264380159de47582ed03453ec2",
+                "type": "text"
+              },
+              {
+                "key": "x-user-id",
+                "value": "cmohjdd6k0008a43gdc2n6a75",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑07: retrieve saved analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "1781590957302.287bc86b3245a8f8d04e850e6813b93f35e786caa869407573ea96e73d12ebd8",
+                "type": "text"
+              },
+              {
+                "key": "x-user-id",
+                "value": "cmohjdd6k0008a43gdc2n6a75",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑08: missing x-user-id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/ai/burnout",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "ai",
+                "burnout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑09: no saved insight (new user)",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑10: valid request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑11: missing x-user-id",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑12: no tasks to prioritize",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑13: AI rate limit",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "AI‑14: AI unavailable",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": ""
+    }
+  ]
+}

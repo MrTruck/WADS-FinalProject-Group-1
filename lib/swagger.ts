@@ -12,7 +12,7 @@ export const getApiDocs = async () => {
       },
       servers: [
         {
-          url: "http://localhost:3000/api/v1",
+          url: "/api/v1",
           description: "Development server",
         },
       ],
@@ -993,7 +993,7 @@ PrioritizationErrorResponse: {
 "/ai/prioritize": {
   servers: [
     {
-      url: "http://localhost:3000/api",
+      url: "/api",
       description: "Development AI API server",
     },
   ],
@@ -1109,7 +1109,7 @@ PrioritizationErrorResponse: {
 "/ai/burnout": {
   servers: [
     {
-      url: "http://localhost:3000/api",
+      url: "/api",
       description: "Development AI API server",
     },
   ],

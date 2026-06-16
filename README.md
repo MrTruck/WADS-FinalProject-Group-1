@@ -14,9 +14,9 @@ L4BC
 **Group Members:**
 | Name | Student ID| Role | GitHub Username|
 | ------------- | ------ | ------------- | ------ |
-| HANINA ELIAS ABDOSH| 2802516030 | TBA | haninaabdosh
-| PATRICK WILLIAM PRABOWO| 2802554520 | TBA | MrTruck
-| IMANUEL SHEVA G SIMANJUNTAK| 2802499592 | ai features | Sheva123456
+| HANINA ELIAS ABDOSH| 2802516030 | Analytics Page | haninaabdosh
+| PATRICK WILLIAM PRABOWO| 2802554520 | Notifications, Pomodoro | MrTruck
+| IMANUEL SHEVA G SIMANJUNTAK| 2802499592 | Login, Dashboard | Sheva123456
 
 ## 2. Instructor and Repository 
 **Instructor:** Ida Bagus Kerthyayana Manuaba 

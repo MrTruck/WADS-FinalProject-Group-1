@@ -1,0 +1,35 @@
+name: Check Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: self-hosted
+
+    steps:
+      - name: Check containers
+        run: |
+          echo "=== RUNNING CONTAINERS ==="
+          docker ps
+
+          echo "=== ALL CONTAINERS ==="
+          docker ps -a
+
+      - name: Check app logs
+        run: |
+          echo "=== APP LOGS ==="
+          docker logs --tail=150 wads-final-project-container || true
+
+      - name: Check port mapping
+        run: |
+          echo "=== DOCKER PORT ==="
+          docker port wads-final-project-container || true
+
+          echo "=== LISTENING ON 3028 ==="
+          ss -ltn | grep ':3028' || true
+
+      - name: Test app locally
+        run: |
+          echo "=== LOCAL REQUEST ==="
+          curl -I --max-time 15 http://localhost:3028 || true

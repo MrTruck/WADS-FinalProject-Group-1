@@ -980,6 +980,22 @@ Signed by Group Members:
 • Imanuel Sheva G Simanjuntak
 • Patrick William Prabowo
 ## 16. SETUP 
+Here's what a user needs to do after downloading from GitHub:
+
+Prerequisites:
+* Node.js (v20+) and npm
+* PostgreSQL database
+* A Groq API key (for AI features)
+
+### Install dependencies
+npm install
+### Set up environment variable
+create a .env file and contact admin for its contents
+### Database setup
+npx prisma migrate deploy  # Apply migrations
+npx prisma generate        # Generate Prisma client
+### Run development server
+npm run dev
 
 ## 17. DEPLOYMENT INSTRUCTIONS 
 

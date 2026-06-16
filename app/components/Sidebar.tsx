@@ -84,7 +84,7 @@ export default function Sidebar() {
       <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4">
         <div className="flex items-center gap-3">
           <span className="text-xl">📚</span>
-          {!collapsed && <span className="text-lg font-bold text-zinc-900">Workload</span>}
+          {!collapsed && <span className="text-lg font-bold text-zinc-900">StudySync</span>}
         </div>
 
         <button

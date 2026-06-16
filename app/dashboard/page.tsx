@@ -245,7 +245,15 @@ function TaskModal({ task, onClose, onSave, onDelete, onComplete}) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   async function handleSave() {
-    if (!form.title.trim()) { setError("Title is required."); return; }
+    if (!form.title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+
+    if (!form.due_date) {
+      setError("Due date is required.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -301,7 +309,7 @@ function TaskModal({ task, onClose, onSave, onDelete, onComplete}) {
           <textarea style={{ ...styles.input, minHeight: 80, resize: "vertical" }} value={form.description} onChange={(e) => set("description", e.target.value)} placeholder="Add more details…" />
         </div>
 
-        <div style={styles.row}>
+        <div className="task-modal-row">
           <div style={{ ...styles.fieldGroup, flex: 1 }}>
             <label style={styles.label}>Status</label>
             <select style={styles.input} value={form.status} onChange={(e) => set("status", e.target.value)}>
@@ -330,7 +338,7 @@ function TaskModal({ task, onClose, onSave, onDelete, onComplete}) {
           </div>
         </div>
 
-        <div style={styles.row}>
+        <div className="task-modal-row">
           <div style={{ ...styles.fieldGroup, flex: 1 }}>
             <label style={styles.label}>Difficulty</label>
             <select style={styles.input} value={form.difficulty} onChange={(e) => set("difficulty", e.target.value)}>

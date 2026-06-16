@@ -86,7 +86,7 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-3xl font-bold text-purple-700">
-            Workload Reminder
+            StudySync
           </h1>
 
           <p className="text-gray-500 mt-2">

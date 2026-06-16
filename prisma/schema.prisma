@@ -77,7 +77,7 @@ model category {
 model task {
   title                           String
   description                     String?
-  due_date                        DateTime?
+  due_date                        DateTime
   user_id                         String
   category_id                     String?
   actual_hours                    Float?

@@ -732,7 +732,27 @@ erDiagram
 | SEC‑38 | Concurrent requests (10 rapid GETs) | No crashes, consistent 200 responses | PASS |
 | SEC‑39 | Password change (placeholder) | Secure flow, old token invalidated | NOT TESTED |
 
-### 10.4 AI Functionality Testing (unfinished)
+### 10.4 AI Functionality Testing
+# AI Features – Burnout & Prioritize
+
+| Test Case | Input | Expected Output | Actual Output | Status |
+|-----------|-------|-----------------|---------------|--------|
+| AI‑01 | `{}` | `200 OK`, `burnoutRiskScore` (number), `riskLevel`, `reasons`, `recommendations`, `generatedAt` | `200 OK`, data returned | PASS |
+| AI‑02 | `{"days_back": 14}` | `200 OK`, analysis based on 14 days | `200 OK`, analysis returned | PASS |
+| AI‑03 | (no `x-user-id` header) | `401 Unauthorized`, `{"error":"Missing user id"}` | `401 Unauthorized` | PASS |
+| AI‑04 | `{"days_back": "abc"}` | `400 Bad Request` or `500` (validation/parse error) | `500` with error details | PASS |
+| AI‑05 | AI unavailable (`GROQ_API_KEY` removed) | `500` with error message | `500` with error | PASS |
+| AI‑06 | Consistency: 3 identical requests | Similar `burnoutRiskScore` and `riskLevel` across runs | Scores consistent (±5), risk level same | PASS |
+| AI‑07 | (valid `x-user-id`) | `200 OK`, latest saved insight | `200 OK`, returned saved data | PASS |
+| AI‑08 | (no `x-user-id` header) | `401 Unauthorized` | `401 Unauthorized` | PASS |
+| AI‑09 | New user (no saved insight) | `200 OK`, `null` | `200 OK`, `null` | PASS |
+| AI‑10 | `{}` (valid user with tasks) | `200 OK`, `success: true`, `tasks`, `rankings` | `200 OK`, data returned | PASS |
+| AI‑11 | (no `x-user-id` header) | `401 Unauthorized` | `401 Unauthorized` | PASS |
+| AI‑12 | User with no tasks | `200 OK`, empty `tasks` and `rankings` | `200 OK`, empty arrays | PASS |
+| AI‑13 | 31 requests (rate limit) | `429 Too Many Requests` on 31st | `429` after 30 successful | PASS |
+| AI‑14 | AI unavailable (`GROQ_API_KEY` removed) | `500` or `429` with error | `500` with error message | PASS |
+
+## Failure Handling
 
 ## 11. Deployment & Production Setup 
 ### 11.1 Docker Setup 
@@ -751,12 +771,48 @@ https://e2526-wads-b4bc-07.csbihub.id
 ## 12. GitHub Contribution Summary (INDIVIDUAL) 
 
 ### 12.1 Student Name: Hanina Elias Abdosh
-Features implemented: 
-API endpoints handled: 
-Tests written: 
-Security work: 
-AI-related work: 
-Contributions must match GitHub commit history. 
+**Features implemented:**
+
+- Built authentication system (JWT, refresh tokens, HttpOnly cookies) and session management
+- Designed and implemented CSRF protection for all state-changing endpoints
+- Created Zod validation schemas for all request bodies
+- Built API response formatter for consistent success/error output
+- Prisma client and Swagger documentation integration
+- Used Neon for database hosting and Prisma ORM for schema design and migrations
+- Implemented core REST API endpoints such as auth, tasks, categories, sessions, pomodoro cycles, notifications, analytics, admin
+- Created initial health check endpoint for deployment
+- Swagger JSDoc annotations to route files
+- Basic login and registration page integration with backend authentication APIs. Also worked on the analytics page
+
+**API endpoints handled:**
+- `app/api/auth/me/route.ts`
+- `app/api/v1/tasks/[id]/complete/route.ts`
+- `app/api/v1/sessions/route.ts` (GET)
+- `app/api/v1/pomodoro/cycles/route.ts`
+- `app/api/v1/notifications/[id]/route.ts`
+- `app/api/v1/notifications/[id]/read/route.ts`
+- `app/api/v1/notifications/send/route.ts`
+- `app/api/v1/analytics/streak/route.ts`
+- `app/api/v1/admin/analytics/route.ts`
+**Tests written:**
+- API testing (Postman):
+- Test cases: API-07, API-08, API-09, API-10, API-17, API-18, API-19, API-20, SEC-31, SEC-32, SEC-33, SEC-34, SEC-35, SEC-36, SEC-37, SEC-38, SEC-39, API-44, API-47, API-51, API-55, API-60, API-68
+- AI testing for burnout and prioritize endpoints (valid/invalid/edge cases, consistency, rate limiting, AI unavailability): AI-01 to AI-07
+- Helped document with detailed test results and screenshots
+
+**Security work:**
+- Implemented JWT authentication with HttpOnly, Secure, SameSite=Strict cookies
+- Designed and implemented CSRF token generation and validation
+- Created Zod input validation for all request bodies
+- Integrated bcrypt password hashing
+- Configured rate limiting (auth: 10/15min, AI: 30/min)
+- Managed environment variable secrets for secure API key handling
+- Enforced role-based access control via middleware
+
+**AI-related work:**
+- Contributed to shared AI infrastructure (`lib/ai/analytics.ts`, `lib/ai/groq.ts`)
+- Contributed to implementing AI burnout and prioritize endpoints
+- AI testing for burnout and prioritize endpoints  
 ### 12.2 Student Name: Immanuel Sheva G Simanjuntak
 Features implemented: 
 API endpoints handled: 

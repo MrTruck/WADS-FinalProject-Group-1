@@ -141,7 +141,7 @@ The burnout detection module focuses on student well-being by identifying unheal
                  |  - security headers         |
                  |  - JWT auth enforcement     |
                  |  - CSRF validation          |
-                 |  - admin route checks       |
+                 |                             |
                  +-------------+--------------+
                                |
                                v
@@ -258,7 +258,6 @@ Contains reusable server-side utilities:
 - Requires authentication for `/api/*` routes except public auth endpoints.
 - Verifies the presence and format of the access JWT cookie (`wr_access`).
 - Blocks invalid tokens with `401 Unauthorized`.
-- Protects admin routes under `/api/v1/admin` by checking the decoded JWT role.
 - Enforces CSRF protection for mutating HTTP methods (`POST`, `PUT`, `PATCH`, `DELETE`) by requiring `x-csrf-token`.
 
 ### `auth.ts`
@@ -537,8 +536,8 @@ erDiagram
 ### Authorization
     
 *   Role is stored in JWT payload as role.
-*   middleware.ts checks JWT presence on API routes and enforces admin-only access for /api/v1/admin/\*.
-*   If a request lacks auth or an admin route is accessed without role === 'ADMIN', it returns 401/403.
+*   middleware.ts checks JWT presence on API routes
+*   If a request lacks auth, it returns 401/403.
         
     
 ### Input Validation
@@ -694,8 +693,7 @@ erDiagram
 | API‑62 | GET | `/api/v1/ai/suggestions` | Fetch AI suggestions | 200 OK | PASS |
 | API‑63 | (POST) | Accept an AI suggestion | – | 200 OK | NOT TESTED |
 | API‑64 | (POST) | Dismiss an AI suggestion | – | 200 OK | NOT TESTED |
-| **Admin** | | | | | |
-| API‑65 | POST | `/api/auth/login` | Admin login (`admin@example.com`) | 200 OK, admin token | PASS |
+
 
 ### 10.3 Security Testing
 
@@ -857,7 +855,7 @@ https://e2526-wads-b4bc-07.csbihub.id
 - Built API response formatter for consistent success/error output
 - Prisma client and Swagger documentation integration
 - Used Neon for database hosting and Prisma ORM for schema design and migrations
-- Implemented core REST API endpoints such as auth, tasks, categories, sessions, pomodoro cycles, notifications, analytics, admin
+- Implemented core REST API endpoints such as auth, tasks, categories, sessions, pomodoro cycles, notifications, analytics
 - Created initial health check endpoint for deployment
 - Swagger JSDoc annotations to route files
 - Basic login and registration page integration with backend authentication APIs. Also worked on the analytics page
@@ -980,7 +978,7 @@ Prerequisites:
 ### Install dependencies
 npm install
 ### Set up environment variable
-create a .env file and contact admin for its contents
+create a .env file and contact developers for its contents
 ### Database setup
 npx prisma migrate deploy  # Apply migrations
 npx prisma generate        # Generate Prisma client

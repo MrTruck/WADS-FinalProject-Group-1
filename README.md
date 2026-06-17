@@ -334,9 +334,7 @@ Contains reusable server-side utilities:
 | GET    | `/ai/suggestions`                        | Retrieve AI-generated task suggestions        | Yes           |
 | POST   | `/ai/suggestions/{suggestionId}/accept`  | Accept an AI suggestion                       | Yes           |
 | POST   | `/ai/suggestions/{suggestionId}/dismiss` | Dismiss an AI suggestion                      | Yes           |
-| GET    | `/admin/users`                           | Retrieve all registered users (Admin only)    | Yes           |
-| DELETE | `/admin/users/{userId}`                  | Delete a user account (Admin only)            | Yes           |
-| GET    | `/admin/analytics`                       | Retrieve system-wide analytics (Admin only)   | Yes           |
+
 
 ---
 
@@ -443,11 +441,7 @@ Protected endpoints require authentication.
   * `/analytics/*`
   * `/ai/*`
 
-* Administrator Only:
 
-  * `/admin/users`
-  * `/admin/users/{userId}`
-  * `/admin/analytics`
 
 ---
 
@@ -657,8 +651,7 @@ erDiagram
 | API‑06 | POST | `/api/auth/login` | Non‑existent user | 401 Unauthorized | PASS |
 | API‑07 | GET | `/api/auth/me` | No auth header/cookie | 401 Unauthorized | PASS |
 | API‑08 | GET | `/api/auth/me` | Valid session cookie | 200 OK, user profile | PASS |
-| API‑09 | GET | `/api/v1/admin/users` | Regular user token, admin route | 403 Forbidden | PASS |
-| API‑10 | GET | `/api/v1/admin/users` | Admin token, admin route | 200 OK, user list | PASS |
+
 | **Tasks (CRUD)** | | | | | |
 | API‑11 | POST | `/api/v1/tasks` | Valid title & priority (CSRF token present) | 201 Created | PASS |
 | API‑12 | POST | `/api/v1/tasks` | Missing `title` field | 400 Bad Request | PASS |
@@ -703,9 +696,6 @@ erDiagram
 | API‑64 | (POST) | Dismiss an AI suggestion | – | 200 OK | NOT TESTED |
 | **Admin** | | | | | |
 | API‑65 | POST | `/api/auth/login` | Admin login (`admin@example.com`) | 200 OK, admin token | PASS |
-| API‑66 | GET | `/api/v1/admin/users` | Admin token, list all users | 200 OK | PASS |
-| API‑67 | DELETE | `/api/v1/admin/users/{userId}` | Admin deletes a user | 204 No Content | PASS |
-| API‑68 | GET | `/api/v1/admin/analytics` | System analytics (admin only) | 200 OK | PASS |
 
 ### 10.3 Security Testing
 
@@ -881,7 +871,7 @@ https://e2526-wads-b4bc-07.csbihub.id
 - `app/api/v1/notifications/[id]/read/route.ts`
 - `app/api/v1/notifications/send/route.ts`
 - `app/api/v1/analytics/streak/route.ts`
-- `app/api/v1/admin/analytics/route.ts`
+
 **Tests written:**
 - API testing (Postman):
 - Test cases: API-07, API-08, API-09, API-10, API-17, API-18, API-19, API-20, SEC-31, SEC-32, SEC-33, SEC-34, SEC-35, SEC-36, SEC-37, SEC-38, SEC-39, API-44, API-47, API-51, API-55, API-60, API-68

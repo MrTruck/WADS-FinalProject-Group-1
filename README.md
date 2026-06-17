@@ -115,7 +115,7 @@ The burnout detection module focuses on student well-being by identifying unheal
 | API              | REST API|
 | Database         | PostgreSQL |
 | Containerization | Docker |
-| Deployment       | AWS|
+| Deployment       | Cloudflare |
 | Version Control  | GitHub |
 
 ## 5. System Architecture

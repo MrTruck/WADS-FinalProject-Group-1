@@ -18,6 +18,7 @@ export type UserAnalytics = {
   upcomingTasks: {
     task_id: string;
     title: string;
+    description: string | null;
     priority: string;
     difficulty: string;
     due_date: Date | null;
@@ -75,6 +76,7 @@ export async function fetchUserAnalytics(userId: string): Promise<UserAnalytics>
   select: {
     task_id: true,
     title: true,
+    description: true,
     status: true,
     priority: true,
     difficulty: true,

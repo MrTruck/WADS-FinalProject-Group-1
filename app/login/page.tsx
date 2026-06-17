@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
+  const passwordRequirements =
+    'Password must be 8-128 characters and include at least one uppercase letter and one number.'
 
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -48,6 +50,9 @@ export default function LoginPage() {
 
     if (!response.ok) {
         console.log(JSON.stringify(data, null, 2))
+        if (!isLogin && data.errors?.password?.length) {
+          throw new Error(passwordRequirements)
+        }
         throw new Error(
         data.message ||
         data.error ||
@@ -70,7 +75,7 @@ export default function LoginPage() {
       }
     } catch (err) {
         console.error(err)
-        setError(String(err))
+        setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
@@ -150,7 +155,7 @@ export default function LoginPage() {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-2xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              className="w-full px-4 py-3 rounded-2xl border border-purple-200 text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-300"
             />
           </div>
 
@@ -166,7 +171,7 @@ export default function LoginPage() {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-2xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              className="w-full px-4 py-3 rounded-2xl border border-purple-200 text-black placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-300"
             />
           </div>
           {success && (

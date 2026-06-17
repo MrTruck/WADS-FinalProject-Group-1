@@ -14,6 +14,9 @@ export type LLMOptions = {
   model?: string;
   temperature?: number;
   max_tokens?: number;
+  response_format?: {
+    type: "json_object";
+  };
 };
 
 /**
@@ -28,12 +31,14 @@ export async function callLLM(
     model = "llama-3.3-70b-versatile",
     temperature = 0.7,
     max_tokens = 1024,
+    response_format,
   } = options;
 
   const response = await groq.chat.completions.create({
     model,
     temperature,
     max_tokens,
+    ...(response_format ? { response_format } : {}),
     messages,
   });
 

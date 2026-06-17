@@ -115,7 +115,7 @@ The burnout detection module focuses on student well-being by identifying unheal
 | API              | REST API|
 | Database         | PostgreSQL |
 | Containerization | Docker |
-| Deployment       | Cloudflare |
+| Deployment       | AWS|
 | Version Control  | GitHub |
 
 ## 5. System Architecture
@@ -141,7 +141,6 @@ The burnout detection module focuses on student well-being by identifying unheal
                  |  - security headers         |
                  |  - JWT auth enforcement     |
                  |  - CSRF validation          |
-                 |                             |
                  +-------------+--------------+
                                |
                                v
@@ -334,7 +333,6 @@ Contains reusable server-side utilities:
 | POST   | `/ai/suggestions/{suggestionId}/accept`  | Accept an AI suggestion                       | Yes           |
 | POST   | `/ai/suggestions/{suggestionId}/dismiss` | Dismiss an AI suggestion                      | Yes           |
 
-
 ---
 
 ### 6.2 API Documentation
@@ -440,8 +438,6 @@ Protected endpoints require authentication.
   * `/analytics/*`
   * `/ai/*`
 
-
-
 ---
 
 ### Technologies Used
@@ -536,7 +532,7 @@ erDiagram
 ### Authorization
     
 *   Role is stored in JWT payload as role.
-*   middleware.ts checks JWT presence on API routes
+*   middleware.ts checks JWT presence on API routes 
 *   If a request lacks auth, it returns 401/403.
         
     
@@ -650,7 +646,6 @@ erDiagram
 | API‑06 | POST | `/api/auth/login` | Non‑existent user | 401 Unauthorized | PASS |
 | API‑07 | GET | `/api/auth/me` | No auth header/cookie | 401 Unauthorized | PASS |
 | API‑08 | GET | `/api/auth/me` | Valid session cookie | 200 OK, user profile | PASS |
-
 | **Tasks (CRUD)** | | | | | |
 | API‑11 | POST | `/api/v1/tasks` | Valid title & priority (CSRF token present) | 201 Created | PASS |
 | API‑12 | POST | `/api/v1/tasks` | Missing `title` field | 400 Bad Request | PASS |
@@ -872,7 +867,7 @@ https://e2526-wads-b4bc-07.csbihub.id
 
 **Tests written:**
 - API testing (Postman):
-- Test cases: API-07, API-08, API-09, API-10, API-17, API-18, API-19, API-20, SEC-31, SEC-32, SEC-33, SEC-34, SEC-35, SEC-36, SEC-37, SEC-38, SEC-39, API-44, API-47, API-51, API-55, API-60, API-68
+- Test cases: API-07, API-08, API-17, API-18, API-19, API-20, SEC-31, SEC-32, SEC-33, SEC-34, SEC-35, SEC-36, SEC-37, SEC-38, SEC-39, API-44, API-47, API-51, API-55, API-60
 - AI testing for burnout and prioritize endpoints (valid/invalid/edge cases, consistency, rate limiting, AI unavailability): AI-01 to AI-07
 - Helped document with detailed test results and screenshots
 
@@ -978,7 +973,7 @@ Prerequisites:
 ### Install dependencies
 npm install
 ### Set up environment variable
-create a .env file and contact developers for its contents
+create a .env file and contact admin for its contents
 ### Database setup
 npx prisma migrate deploy  # Apply migrations
 npx prisma generate        # Generate Prisma client

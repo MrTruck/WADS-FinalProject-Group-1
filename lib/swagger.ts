@@ -237,6 +237,54 @@ export const getApiDocs = async () => {
           },
 
           // ─── Analytics ───────────────────────────────────────────
+          Notification: {
+            type: "object",
+            properties: {
+              notification_id: { type: "string" },
+              user_id: { type: "string" },
+              type: { $ref: "#/components/schemas/NotificationType" },
+              title: { type: "string", example: "Assignment Due Soon" },
+              message: { type: "string", example: "Finish report is due soon." },
+              is_read: { type: "boolean", example: false },
+              read_at: { type: "string", format: "date-time", nullable: true },
+              push_subscription_id: { type: "string", nullable: true },
+              created_at: { type: "string", format: "date-time" },
+            },
+          },
+          NotificationSettings: {
+            type: "object",
+            properties: {
+              notification_settings_id: { type: "string" },
+              user_id: { type: "string" },
+              in_app_enabled: { type: "boolean", example: true },
+              email_enabled: { type: "boolean", example: true },
+              push_enabled: { type: "boolean", example: true },
+              reminder_before_minutes: { type: "integer", example: 1440 },
+              daily_digest: { type: "boolean", example: true },
+              weekly_report: { type: "boolean", example: true },
+              burnout_alerts: { type: "boolean", example: true },
+              created_at: { type: "string", format: "date-time" },
+              updated_at: { type: "string", format: "date-time" },
+            },
+          },
+          UpdateNotificationSettingsRequest: {
+            type: "object",
+            properties: {
+              in_app_enabled: { type: "boolean", example: true },
+              email_enabled: { type: "boolean", example: true },
+              push_enabled: { type: "boolean", example: true },
+              reminder_before_minutes: {
+                type: "integer",
+                minimum: 0,
+                maximum: 10080,
+                example: 60,
+              },
+              daily_digest: { type: "boolean", example: true },
+              weekly_report: { type: "boolean", example: true },
+              burnout_alerts: { type: "boolean", example: true },
+            },
+          },
+
           ProgressResponse: {
             type: "object",
             properties: {
@@ -870,6 +918,172 @@ PrioritizationErrorResponse: {
                   },
                 },
               },
+            },
+          },
+        },
+
+        // NOTIFICATIONS
+        "/notifications": {
+          get: {
+            tags: ["Notifications"],
+            summary: "Retrieve notifications for the authenticated user",
+            security: [{ cookieAuth: [] }],
+            parameters: [
+              {
+                in: "query",
+                name: "unread",
+                required: false,
+                schema: { type: "boolean", default: false },
+                description: "When true, return only unread notifications",
+              },
+            ],
+            responses: {
+              200: {
+                description: "Notifications retrieved successfully",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        success: { type: "boolean", example: true },
+                        data: {
+                          type: "object",
+                          properties: {
+                            notifications: {
+                              type: "array",
+                              items: { $ref: "#/components/schemas/Notification" },
+                            },
+                            count: { type: "integer", example: 2 },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              401: { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+            },
+          },
+        },
+        "/notifications/{notificationId}/read": {
+          patch: {
+            tags: ["Notifications"],
+            summary: "Mark a notification as read",
+            security: [{ cookieAuth: [] }],
+            parameters: [
+              {
+                in: "path",
+                name: "notificationId",
+                required: true,
+                schema: { type: "string" },
+                description: "ID of the notification to mark as read",
+              },
+              {
+                in: "header",
+                name: "x-csrf-token",
+                required: true,
+                schema: { type: "string" },
+                description: "CSRF token issued on login",
+              },
+            ],
+            responses: {
+              200: {
+                description: "Notification marked as read",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        success: { type: "boolean", example: true },
+                        data: {
+                          type: "object",
+                          properties: {
+                            notification: { $ref: "#/components/schemas/Notification" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              401: { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+              403: { description: "Missing or invalid CSRF token", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+              404: { description: "Notification not found", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+            },
+          },
+        },
+        "/notifications/settings": {
+          get: {
+            tags: ["Notifications"],
+            summary: "Retrieve notification preferences",
+            security: [{ cookieAuth: [] }],
+            responses: {
+              200: {
+                description: "Notification preferences retrieved successfully",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        success: { type: "boolean", example: true },
+                        data: {
+                          type: "object",
+                          properties: {
+                            settings: { $ref: "#/components/schemas/NotificationSettings" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              401: { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+            },
+          },
+          put: {
+            tags: ["Notifications"],
+            summary: "Update notification preferences",
+            security: [{ cookieAuth: [] }],
+            parameters: [
+              {
+                in: "header",
+                name: "x-csrf-token",
+                required: true,
+                schema: { type: "string" },
+                description: "CSRF token issued on login",
+              },
+            ],
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/UpdateNotificationSettingsRequest" },
+                },
+              },
+            },
+            responses: {
+              200: {
+                description: "Notification preferences updated successfully",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        success: { type: "boolean", example: true },
+                        data: {
+                          type: "object",
+                          properties: {
+                            settings: { $ref: "#/components/schemas/NotificationSettings" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              400: { description: "Validation error", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+              401: { description: "Unauthorized", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
+              403: { description: "Missing or invalid CSRF token", content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } } },
             },
           },
         },

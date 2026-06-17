@@ -57,6 +57,10 @@ function getCsrfToken() {
     ?.split("=")[1];
 }
 
+type BurnoutRefreshOptions = {
+  workloadDecreased?: boolean;
+};
+
 async function apiFetch(path, options: any = {}) {
   const csrfToken = getCsrfToken();
   const res = await fetch(`/api/v1${path}`, {
@@ -97,7 +101,9 @@ async function getSavedBurnout() {
   return data;
 }
 
-async function recalculateBurnout() {
+async function recalculateBurnout(
+  options: BurnoutRefreshOptions = {}
+) {
   const csrfToken = getCsrfToken();
 
   const response = await fetch("/api/ai/burnout", {
@@ -111,7 +117,7 @@ async function recalculateBurnout() {
         : {}),
     },
     credentials: "include",
-    body: JSON.stringify({}),
+    body: JSON.stringify(options),
   });
 
   const rawResponse = await response.text();
@@ -814,12 +820,14 @@ useEffect(() => {
   };
 }, []);
   
-async function refreshBurnout() {
+async function refreshBurnout(
+  options: BurnoutRefreshOptions = {}
+) {
   setBurnoutLoading(true);
   setBurnoutError(null);
 
   try {
-    const result = await recalculateBurnout();
+    const result = await recalculateBurnout(options);
 
     setBurnout(result);
 
@@ -915,7 +923,7 @@ async function handleDelete(id: string) {
   );
 
   try {
-    await refreshBurnout();
+    await refreshBurnout({ workloadDecreased: true });
   } catch (error) {
     console.error(
       "Task deleted, but burnout refresh failed:",
@@ -936,7 +944,7 @@ async function handleComplete(id: string) {
   );
 
   try {
-    await refreshBurnout();
+    await refreshBurnout({ workloadDecreased: true });
   } catch (error) {
     console.error(
       "Task completed, but burnout refresh failed:",

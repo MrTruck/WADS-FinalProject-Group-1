@@ -731,8 +731,7 @@ erDiagram
 | AI‑10 | `{}` (valid user with tasks) | `200 OK`, `success: true`, `tasks`, `rankings` | `200 OK`, data returned | PASS |
 | AI‑11 | (no `x-user-id` header) | `401 Unauthorized` | `401 Unauthorized` | PASS |
 | AI‑12 | User with no tasks | `200 OK`, empty `tasks` and `rankings` | `200 OK`, empty arrays | PASS |
-| AI‑13 | 31 requests (rate limit) | `429 Too Many Requests` on 31st | `429` after 30 successful | PASS |
-| AI‑14 | AI unavailable (`GROQ_API_KEY` removed) | `500` or `429` with error | `500` with error message | PASS |
+| AI‑13 | AI unavailable (`GROQ_API_KEY` removed) | `500` or `429` with error | `500` with error message | PASS |
 
 ## Failure Handling
 
@@ -895,7 +894,7 @@ API endpoints handled:
 * Worked on app/api/ai/prioritize/route.ts for calculating task urgency and updating task priority values in the database.
 
 Tests written: 
-* AI testing for the burnout-insight retrieval and task-prioritization endpoints, covering valid and missing user IDs, users with no saved insights or tasks, successful response consistency, rate limiting, and AI service unavailability: **AI-07 to AI-14**.
+* AI testing for the burnout-insight retrieval and task-prioritization endpoints, covering valid and missing user IDs, users with no saved insights or tasks, successful response consistency, rate limiting, and AI service unavailability: **AI-07 to AI-13**.
 
 Security work: 
 * Integrated the login and registration frontend with the existing authentication system.

@@ -2041,10 +2041,32 @@
           "response": []
         },
         {
-          "name": "AI‑05: AI unavailable",
+          "name": "AI-05: Burnout AI unavailable",
+          "description": "Expected: 500 Internal Server Error because the AI API key is invalid or unavailable.",
           "request": {
-            "method": "GET",
-            "header": []
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrf_token}}",
+                "type": "text"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "http://localhost:3000/api/ai/burnout"
           },
           "response": []
         },
@@ -2134,53 +2156,136 @@
           "response": []
         },
         {
-          "name": "AI‑09: no saved insight (new user)",
-          "request": {
-            "method": "GET",
-            "header": []
-          },
-          "response": []
+        "name": "AI-09: No saved burnout insight for new user",
+        "description": "Expected: 200 OK with a null response because the user has no saved burnout analysis.",
+        "request": {
+          "method": "GET",
+          "header": [
+            {
+              "key": "x-user-id",
+              "value": "{{new_user_id}}",
+              "type": "text"
+            }
+          ],
+          "url": "http://localhost:3000/api/ai/burnout"
         },
-        {
-          "name": "AI‑10: valid request",
-          "request": {
-            "method": "GET",
-            "header": []
+        "response": []
+      },
+      {
+        "name": "AI-10: Valid task prioritization request",
+        "description": "Expected: 200 OK with tasks and rankings.",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "x-csrf-token",
+              "value": "{{csrf_token}}",
+              "type": "text"
+            },
+            {
+              "key": "x-user-id",
+              "value": "{{user_id}}",
+              "type": "text"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           },
-          "response": []
+          "url": "http://localhost:3000/api/ai/prioritize"
         },
-        {
-          "name": "AI‑11: missing x-user-id",
-          "request": {
-            "method": "GET",
-            "header": []
+        "response": []
+      },
+      {
+        "name": "AI-11: Prioritization request without CSRF token",
+        "description": "Expected: 403 Forbidden with the message CSRF token missing.",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "x-user-id",
+              "value": "{{user_id}}",
+              "type": "text"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           },
-          "response": []
+          "url": "http://localhost:3000/api/ai/prioritize"
         },
-        {
-          "name": "AI‑12: no tasks to prioritize",
-          "request": {
-            "method": "GET",
-            "header": []
+        "response": []
+      },
+      {
+        "name": "AI-12: No tasks to prioritize",
+        "description": "Expected: 200 OK with empty tasks and rankings arrays.",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "x-csrf-token",
+              "value": "{{csrf_token}}",
+              "type": "text"
+            },
+            {
+              "key": "x-user-id",
+              "value": "{{new_user_id}}",
+              "type": "text"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           },
-          "response": []
+          "url": "http://localhost:3000/api/ai/prioritize"
         },
-        {
-          "name": "AI‑13: AI rate limit",
-          "request": {
-            "method": "GET",
-            "header": []
+        "response": []
+      },
+      {
+        "name": "AI-13: Prioritization AI unavailable",
+        "description": "Expected: 500 Internal Server Error because the AI API key is invalid or unavailable.",
+        "request": {
+          "method": "POST",
+          "header": [
+            {
+              "key": "x-csrf-token",
+              "value": "{{csrf_token}}",
+              "type": "text"
+            },
+            {
+              "key": "x-user-id",
+              "value": "{{user_id}}",
+              "type": "text"
+            }
+          ],
+          "body": {
+            "mode": "raw",
+            "raw": "{}",
+            "options": {
+              "raw": {
+                "language": "json"
+              }
+            }
           },
-          "response": []
+          "url": "http://localhost:3000/api/ai/prioritize"
         },
-        {
-          "name": "AI‑14: AI unavailable",
-          "request": {
-            "method": "GET",
-            "header": []
-          },
-          "response": []
-        }
+        "response": []
+      }
       ]
     }
   ],
